@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Amazon Scraper Settings</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f9f9f9;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: bold;
+      margin-right: 5px;
+      flex: 0 0 auto;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      padding: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      margin-right: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    input[type="color"] {
+      width: 40px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      margin-right: 10px;
+      vertical-align: middle;
+      flex: 0 0 40px;
+    }
+
+    button {
+      padding: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      background-color: #4CAF50;
+      transition: background-color 0.3s;
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #333;
+      text-align: center;
+    }
+
+    .error {
+      color: #d32f2f;
+    }
+
+    .config-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="config-row">
+    <label for="daysInput">Days:</label>
+    <input type="text" id="daysInput" value="30" placeholder="Days">
+    <input type="color" id="daysColor" value="#abfaaf">
+  </div>
+
+  <div class="config-row">
+    <label for="rankInput">Rank:</label>
+    <input type="text" id="rankInput" value="10,000" placeholder="Rank">
+    <input type="color" id="rankColor" value="#ffeb3b">
+  </div>
+
+  <div class="config-row">
+    <label for="bothColor">Both:</label>
+    <input type="color" id="bothColor" value="#ff9800">
+  </div>
+
+  <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+
+  <div style="margin-bottom: 10px;">
+    <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold;">Scraping Mode:</label>
+    <div style="margin-left: 10px;">
+      <label style="font-weight: normal; display: block; margin-bottom: 5px;">
+        <input type="radio" name="scrapingMode" value="sequential" checked> Sequential (Safe)
+      </label>
+      <label style="font-weight: normal; display: block;">
+        <input type="radio" name="scrapingMode" value="concurrent"> Concurrent (Fast)
+      </label>
+    </div>
+  </div>
+
+  <div id="delaySettings" style="margin-bottom: 10px;">
+    <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">Random Delay (ms):</label>
+    <div class="config-row">
+      <label for="delayMin" style="font-size: 12px;">Min:</label>
+      <input type="text" id="delayMin" value="1,500" placeholder="1500" style="flex: 1; margin-right: 10px;">
+      <label for="delayMax" style="font-size: 12px;">Max:</label>
+      <input type="text" id="delayMax" value="3,500" placeholder="3500" style="flex: 1;">
+    </div>
+  </div>
+
+  <hr style="margin: 15px 0; border: none; border-top: 1px solid #ddd;">
+
+  <div style="margin-bottom: 10px;">
+    <label style="display: flex; align-items: center; font-size: 14px; font-weight: bold; margin-bottom: 5px;">
+      <input type="checkbox" id="proxyEnabled" style="margin-right: 8px;">
+      Use Proxy
+    </label>
+  </div>
+
+  <div id="proxySettings" style="margin-bottom: 10px; display: none;">
+    <div class="config-row">
+      <label for="proxyScope" style="font-size: 12px; min-width: 45px;">Scope:</label>
+      <select id="proxyScope"
+        style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px;">
+        <option value="amazon">Amazon Only</option>
+        <option value="global">Global (All Sites)</option>
+      </select>
+    </div>
+    <div class="config-row">
+      <label for="proxyHost" style="font-size: 12px; min-width: 45px;">Host:</label>
+      <input type="text" id="proxyHost" placeholder="proxy.example.com" style="flex: 1;">
+    </div>
+    <div class="config-row">
+      <label for="proxyPort" style="font-size: 12px; min-width: 45px;">Port:</label>
+      <input type="text" id="proxyPort" placeholder="8080" style="flex: 1;">
+    </div>
+    <div class="config-row">
+      <label for="proxyUsername" style="font-size: 12px; min-width: 45px;">User:</label>
+      <input type="text" id="proxyUsername" placeholder="username" style="flex: 1;">
+    </div>
+    <div class="config-row">
+      <label for="proxyPassword" style="font-size: 12px; min-width: 45px;">Pass:</label>
+      <input type="password" id="proxyPassword" placeholder="password" style="flex: 1;">
+    </div>
+  </div>
+
+  <button id="saveButton">Save</button>
+  <button id="copyAsinsButton">Copy All ASINs</button>
+  <button id="copyTitlesButton">Copy All Titles</button>
+  <div id="message"></div>
+  <script src="popup.js"></script>
+</body>
+
+</html>

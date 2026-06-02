@@ -1,0 +1,307 @@
+// Debug flag - set to false for production
+const DEBUG = false;
+
+// Logger helpers
+const logger = {
+  log: (...args) => DEBUG && console.log('[AmaSort]', ...args),
+  warn: (...args) => DEBUG && console.warn('[AmaSort]', ...args),
+  error: (...args) => console.error('[AmaSort]', ...args) // Always show errors
+};
+
+// Extract ASIN from URL
+function extractASINFromURL(url) {
+  const match = url.match(/\/(?:dp|gp\/product)\/([A-Za-z0-9]{10})/);
+  return match ? match[1] : null;
+}
+
+// Random delay
+const randomDelay = (min, max) => new Promise(resolve =>
+  setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min)
+);
+
+// Cache helpers using chrome.storage.session (clears on browser close)
+const CACHE_KEY_PREFIX = 'amasort_';
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours (if browser stays open)
+
+async function getCachedData(asin) {
+  return new Promise((resolve) => {
+    try {
+      if (!chrome.runtime?.id) {
+        resolve(null);
+        return;
+      }
+      const key = CACHE_KEY_PREFIX + asin;
+      chrome.storage.session.get([key], (result) => {
+        if (chrome.runtime.lastError) {
+          resolve(null);
+          return;
+        }
+        const data = result[key];
+        if (!data) {
+          resolve(null);
+          return;
+        }
+        // Check if cache has expired
+        if (Date.now() - data.timestamp > CACHE_TTL) {
+          chrome.storage.session.remove(key);
+          resolve(null);
+          return;
+        }
+        // Invalidate cache if critical data is N/A or missing
+        if (data.rank === "N/A" || data.date === "N/A" || !data.sku) {
+          logger.log(`⚠️ Cache invalid for ${asin} (contains N/A), will re-crawl`);
+          chrome.storage.session.remove(key);
+          resolve(null);
+          return;
+        }
+        resolve(data);
+      });
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+function setCachedData(asin, data) {
+  try {
+    if (!chrome.runtime?.id) return;
+    const key = CACHE_KEY_PREFIX + asin;
+    const dataToStore = { ...data, timestamp: Date.now() };
+    chrome.storage.session.set({ [key]: dataToStore }, () => {
+      if (chrome.runtime.lastError) {
+        // Silently handle errors
+      }
+    });
+  } catch (e) {
+    // Silently handle exceptions
+  }
+}
+
+// Global settings
+let settings = {
+  scrapingMode: 'sequential',
+  delayMin: 1500,
+  delayMax: 3500,
+  highlightDays: 30,
+  highlightRank: 10000,
+  daysColor: '#abfaaf',
+  rankColor: '#ffeb3b',
+  bothColor: '#ff9800'
+};
+
+logger.log('Content script loaded');
+
+// Load settings from storage and then start processing
+chrome.storage.sync.get([
+  'scrapingMode', 'delayMin', 'delayMax',
+  'highlightDays', 'daysColor', 'highlightRank', 'rankColor', 'bothColor'
+], (result) => {
+  settings = {
+    scrapingMode: result.scrapingMode || 'sequential',
+    delayMin: parseInt(result.delayMin) || 1500,
+    delayMax: parseInt(result.delayMax) || 3500,
+    highlightDays: result.highlightDays || 30,
+    highlightRank: result.highlightRank || 10000,
+    daysColor: result.daysColor || '#abfaaf',
+    rankColor: result.rankColor || '#ffeb3b',
+    bothColor: result.bothColor || '#ff9800'
+  };
+  logger.log('Loaded settings:', settings);
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processProducts);
+  } else {
+    processProducts();
+  }
+  setupObserver();
+});
+
+// Listen for settings updates from popup
+chrome.runtime.onMessage.addListener((message) => {
+
+  let sku = "";
+  if (imageMatch) {
+    const imageUrl = imageMatch[1];
+    const imageParts = imageUrl.split(".png")[0].split("%7C");
+    sku = imageParts.length > 1 ? imageParts[imageParts.length - 1] : "";
+  }
+
+  return {
+    asin: knownAsin || (asinMatch ? asinMatch[1] : "N/A"),
+    rank: rankMatch ? rankMatch[1] : "N/A",
+    date: dateMatch ? dateMatch[1].trim() : "N/A",
+    sku: sku,
+    title: titleMatch ? titleMatch[1].trim() : "N/A"
+  };
+}
+
+// Create info box
+function createInfoBox(data) {
+    const { asin, rank, date, sku } = data;
+    const box = document.createElement("div");
+    box.className = "amasort-info";
+    box.style.cssText = `
+    font-size: 13px;
+    color: #333;
+    background-color: #f8f8f8;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  `;
+
+    const dateObj = new Date(date);
+    const daysDiff = (Date.now() - dateObj) / (1000 * 60 * 60 * 24);
+    const rankNum = rank !== "N/A" ? parseInt(rank.replace(/,/g, "")) : Infinity;
+    const isRecent = !isNaN(dateObj) && daysDiff <= settings.highlightDays;
+    const isLowRank = rankNum <= settings.highlightRank;
+
+    if (isRecent && isLowRank) {
+      const link = product.querySelector("a[href*='/dp/'], a[href*='/gp/product/']");
+      if (link) asin = extractASINFromURL(link.href);
+    }
+    if (!asin) return { success: false };
+    if (product.querySelector('.amasort-info')) return { success: false };
+
+    const cached = await getCachedData(asin);
+    if (cached) {
+      logger.log(`⚡ Using cached data for ${asin}`);
+      const infoBox = createInfoBox(cached);
+      const priceSection = product.querySelector(".a-spacing-top-small");
+      if (priceSection) {
+        priceSection.parentNode.insertBefore(infoBox, priceSection);
+      } else {
+        product.insertBefore(infoBox, product.firstChild);
+      }
+      return { success: true, cached: true };
+    }
+
+    logger.log(`🔄 Fetching new data for ${asin}...`);
+
+    try {
+      const productURL = `https://www.amazon.com/dp/${asin}`;
+      const response = await fetch(productURL, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+      });
+
+      if (!response.ok) {
+        logger.warn(`HTTP ${response.status} for ${asin}`);
+        return { success: false };
+      }
+
+      const html = await response.text();
+      const data = extractProductInfo(html, asin);
+      logger.log(`Extracted data for ${asin}:`, data);
+
+      setCachedData(asin, data);
+
+      const infoBox = createInfoBox(data);
+      const priceSection = product.querySelector(".a-spacing-top-small");
+      if (priceSection) {
+        priceSection.parentNode.insertBefore(infoBox, priceSection);
+      } else {
+        product.insertBefore(infoBox, product.firstChild);
+      }
+
+      logger.log(`✓ Added info box for ${asin}`);
+      return { success: true, cached: false };
+    } catch (error) {
+      logger.error(`Error processing ${asin}:`, error);
+      return { success: false };
+    }
+  }
+
+// Global state for processing lock
+let isProcessing = false;
+let hasPendingUpdates = false;
+
+// Process all products - Sequential mode
+async function processProductsSequential(products) {
+  logger.log(`Processing ${products.length} products in SEQUENTIAL mode`);
+  logger.log(`Delay settings: ${settings.delayMin}ms - ${settings.delayMax}ms`);
+
+  let processed = 0;
+  for (const product of products) {
+    const result = await processProduct(product);
+    if (result.success && !result.cached) {
+      processed++;
+      const delay = Math.floor(Math.random() * (settings.delayMax - settings.delayMin + 1)) + settings.delayMin;
+      logger.log(`⏳ Waiting ${delay}ms before next request...`);
+      await randomDelay(settings.delayMin, settings.delayMax);
+    }
+  }
+  logger.log(`Finished processing ${processed} new products`);
+}
+
+// Process all products - Concurrent mode
+async function processProductsConcurrent(products) {
+  logger.log(`Processing ${products.length} products in CONCURRENT mode (Fast)`);
+  const promises = products.map(async (product) => processProduct(product));
+  await Promise.all(promises);
+  logger.log('Finished processing products');
+}
+
+// Process all products
+async function processProducts() {
+  if (isProcessing) {
+    logger.log('🔒 Processing already in progress, queuing update...');
+    hasPendingUpdates = true;
+    return;
+  }
+
+  isProcessing = true;
+  hasPendingUpdates = false;
+
+  try {
+    logger.log('Starting product processing batch');
+    const products = Array.from(document.querySelectorAll(".s-result-item:not(.amasort-processed)"));
+
+    if (products.length > 0) {
+      logger.log(`Found ${products.length} new products`);
+      products.forEach(p => p.classList.add('amasort-processed'));
+      logger.log(`Mode: ${settings.scrapingMode}`);
+
+      if (settings.scrapingMode === 'concurrent') {
+        await processProductsConcurrent(products);
+      } else {
+        await processProductsSequential(products);
+      }
+    } else {
+      logger.log('No new products found in this batch');
+    }
+  } catch (err) {
+    logger.error('Error in processProducts:', err);
+  } finally {
+    isProcessing = false;
+    logger.log('🔓 Batch processing finished');
+    if (hasPendingUpdates) {
+      logger.log('↻ Found pending updates, restarting processing...');
+      processProducts();
+    }
+  }
+}
+
+// Setup MutationObserver to detect new products
+function setupObserver() {
+  let debounceTimer;
+  const observer = new MutationObserver(() => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const newProducts = document.querySelectorAll(".s-result-item:not(.amasort-processed)");
+      if (newProducts.length > 0) {
+        logger.log(`Detected ${newProducts.length} new products, triggering processing...`);
+        processProducts();
+      }
+    }, 500);
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  logger.log('MutationObserver started - will auto-detect new products');
+}
+
+logger.log('Script initialized');
