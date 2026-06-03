@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Analysis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #a78bfa, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+            display: grid;
+            grid-template-columns: minmax(0, 450px) 1fr;
+            gap: 24px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .card-header .dot.green { background: #34d399; }
+        .card-header .dot.yellow { background: #fbbf24; }
+        .card-header .dot.red { background: #f87171; }
+
+        .card-header h2 {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin-left: 8px;
+        }
+
+        /* Thumbnail Card */
+        .thumbnail-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .thumbnail-wrapper {
+            flex: 1;
+        }
+
+        /* Prompt Card */
+        .prompt-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .prompt-card .prompt-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-bottom: none;
+        }
+
+        .prompt-card .prompt-textarea {
+            flex: 1;
+            min-height: 100px;
+            max-height: none;
+        }
+
+        /* Analysis Card - full width */
+        .analysis-card {
+            grid-column: 1 / -1;
+        }
+
+        .container > .thumbnail-wrapper {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .thumbnail-card .thumbnail-wrapper {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .thumbnail-wrapper img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .thumbnail-wrapper img:hover {
+            transform: scale(1.02);
+        }
+
+        .image-info {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+            word-break: break-all;
+            overflow-wrap: anywhere;
+            max-width: 100%;
+        }
+
+        /* Analysis Card */
+        .analysis-content {
+            padding: 24px;
+            line-height: 1.8;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .analysis-content h1, .analysis-content h2, .analysis-content h3 {
+            color: #a78bfa;
+            margin: 20px 0 10px;
+            font-weight: 600;
+        }
+
+        .analysis-content h1 { font-size: 22px; }
+        .analysis-content h2 { font-size: 18px; }
+        .analysis-content h3 { font-size: 16px; }
+
+        .analysis-content p {
+            margin-bottom: 12px;
+        }
+
+        .analysis-content strong, .analysis-content b {
+            color: #c4b5fd;
+            font-weight: 600;
+        }
+
+        .analysis-content ul, .analysis-content ol {
+            margin: 10px 0 10px 24px;
+        }
+
+        .analysis-content li {
+            margin-bottom: 6px;
+        }
+
+        /* Loading State */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(167, 139, 250, 0.2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Error State */
+        .error-state {
+            padding: 40px 24px;
+            text-align: center;
+            color: #f87171;
+        }
+
+        .error-state .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .error-state p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 8px;
+        }
+
+        /* Copy button */
+        .copy-btn {
+            margin-left: auto;
+            background: rgba(167, 139, 250, 0.15);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            color: #a78bfa;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            background: rgba(167, 139, 250, 0.25);
+            border-color: rgba(167, 139, 250, 0.5);
+        }
+
+        .copy-btn.copied {
+            background: rgba(52, 211, 153, 0.15);
+            border-color: rgba(52, 211, 153, 0.3);
+            color: #34d399;
+        }
+
+        /* Prompt Editor */
+        .prompt-editor {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .prompt-editor-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.45);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            min-height: 80px;
+            max-height: 200px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+
+        .prompt-textarea:focus {
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        }
+
+        .prompt-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .prompt-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .regen-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .regen-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .regen-btn:active {
+            transform: translateY(0);
+        }
+
+        .regen-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .regen-btn .btn-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .regen-btn.loading .btn-spinner {
+            display: inline-block;
+        }
+
+        .regen-btn.loading .btn-text {
+            display: none;
+        }
+
+        .prompt-hint {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-left: auto;
+        }
+
+        /* Extracted Prompts Section */
+        .extracted-prompts {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+
+        .extracted-prompts.visible {
+            display: block;
+        }
+
+        .extracted-header {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .extracted-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .extracted-count {
+            font-size: 11px;
+            background: rgba(167, 139, 250, 0.2);
+            color: #a78bfa;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .prompt-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .prompt-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background 0.15s ease;
+            cursor: pointer;
+        }
+
+        .prompt-item:last-child {
+            border-bottom: none;
+        }
+
+        .prompt-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .prompt-item.checked {
+            background: rgba(167, 139, 250, 0.06);
+        }
+
+        .prompt-item input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            margin-top: 2px;
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+
+        .prompt-item input[type="checkbox"]:checked {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+        }
+
+        .prompt-item input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .prompt-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .prompt-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .prompt-item-audience {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+
+        .prompt-item-style {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .prompt-item-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.75);
+            word-break: break-word;
+        }
+
+        .extracted-footer {
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .select-all-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .select-all-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .selected-info {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: auto;
+        }
+
+        /* Generate Button */
+        .generate-btn {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            border: none;
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .generate-btn .btn-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        .generate-btn.loading .btn-spinner {
+            display: inline-block;
+        }
+
+        .generate-btn.loading .btn-text {
+            display: none;
+        }
+
+        /* Generated Images Gallery */
+        .generated-gallery {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+
+        .generated-gallery.visible {
+            display: block;
+        }
+
+        .gallery-header {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gallery-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .gallery-progress {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-left: auto;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .gallery-item {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .gallery-item-image {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000000; /* Default background */
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        /* Background Color Classes */
+        .preview-black { background: #000000 !important; }
+        .preview-grey { background: #808080 !important; }
+        .preview-white { background: #ffffff !important; }
+
+        .color-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 0 12px 12px;
+            align-items: center;
+        }
+
+        .color-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .color-dot.active {
+            border: 2px solid #a78bfa;
+            transform: scale(1.1);
+        }
+
+        .dot-black { background: #000000; }
+        .dot-grey { background: #808080; }
+        .dot-white { background: #ffffff; }
+
+        .gallery-item-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .gallery-item-image .item-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gallery-item-image .item-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(245, 158, 11, 0.2);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .gallery-item-image .item-loading-text {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .gallery-item-info {
+            padding: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .gallery-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .gallery-item-prompt {
+            font-size: 11px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.5);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .gallery-item-error {
+            color: #f87171;
+            font-size: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .gallery-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .gallery-item-actions a {
+            font-size: 11px;
+            color: #a78bfa;
+            text-decoration: none;
+            padding: 4px 8px;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .gallery-item-actions a:hover {
+            background: rgba(167, 139, 250, 0.15);
+        }
+
+        /* Ideogram Config Panel */
+        .ideogram-config {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .ideogram-config.visible {
+            display: block;
+        }
+
+        .config-header {
+            padding: 14px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 14px;
+            padding: 16px 20px;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .config-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .config-field label {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.45);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .config-field select,
+        .config-field input[type="number"],
+        .config-field input[type="text"] {
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .config-field select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        .config-field select:focus,
+        .config-field input:focus {
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        }
+
+        .config-field select option {
+            background: #24243e;
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .provider-toggle {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+            background: rgba(0,0,0,0.2);
+            padding: 3px;
+            border-radius: 8px;
+        }
+
+        .provider-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .provider-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+
+        .provider-btn:hover:not(.active) {
+            color: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* Manual Prompt Input */
+        .manual-add-container {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .manual-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .manual-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .manual-input:focus {
+            border-color: rgba(167, 139, 250, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        }
+
+        .manual-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .add-manual-btn {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-manual-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+
+            .analysis-card {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-icon">🎨</div>
+        <h1>Design Analysis</h1>
+        <span class="subtitle" id="timestamp"></span>
+    </div>
+
+    <div class="container">
+        <!-- Row 1: Thumbnail + Prompt Editor -->
+        <div class="card thumbnail-card">
+            <div class="card-header">
+                <span class="dot green"></span>
+                <span class="dot yellow"></span>
+                <span class="dot red"></span>
+                <h2>Product Thumbnail</h2>
+            </div>
+            <div class="thumbnail-wrapper">
+                <img id="thumbnailImage" src="" alt="Product Thumbnail">
+            </div>
+            <div class="image-info">
+                <div id="asinDisplay" style="font-weight: 600; color: #a78bfa; margin-bottom: 4px;"></div>
+                <div id="titleDisplay" contenteditable="true" style="line-height: 1.4; margin-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.15); outline: none; transition: all 0.2s;" title="Nhấp để sửa tiêu đề"></div>
+                <div id="imageInfo"></div>
+            </div>
+        </div>
+
+        <div class="card prompt-card">
+            <div class="card-header">
+                <span class="dot green"></span>
+                <span class="dot yellow"></span>
+                <span class="dot red"></span>
+                <h2>✏️ Prompt</h2>
+            </div>
+            <div class="prompt-editor">
+                <textarea class="prompt-textarea" id="promptTextarea" placeholder="Nhập prompt phân tích thiết kế..."></textarea>
+                <div class="prompt-actions">
+                    <button class="regen-btn" id="regenBtn">
+                        <span class="btn-text">🔄 Generate</span>
+                        <span class="btn-spinner"></span>
+                    </button>
+                    <span class="prompt-hint">Chỉnh sửa prompt rồi bấm Generate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: AI Analysis (full width) -->
+        <div class="card analysis-card">
+            <div class="card-header">
+                <span class="dot green"></span>
+                <span class="dot yellow"></span>
+                <span class="dot red"></span>
+                <h2>AI Analysis</h2>
+                <button class="copy-btn" id="copyBtn" style="display:none;" title="Copy analysis text">
+                    📋 Copy
+                </button>
+            </div>
+            <!-- Manual Prompt Addition -->
+            <div class="manual-add-container">
+                <div class="manual-input-wrapper">
+                    <input type="text" id="manualPromptInput" class="manual-input" placeholder="Nhập prompt thủ công tại đây...">
+                </div>
+                <button id="addManualPromptBtn" class="add-manual-btn">
+                    <span>➕ Thêm Prompt</span>
+                </button>
+            </div>
+            <div id="analysisContent">
+                <div class="loading-state" id="loadingState">
+                    <div style="font-size: 48px;">🎨</div>
+                    <div class="loading-text" style="animation: none; opacity: 0.6;">Chỉnh sửa prompt rồi bấm Re-generate để bắt đầu phân tích</div>
+                </div>
+            </div>
+            <!-- Extracted Prompts Section -->
+            <div class="extracted-prompts" id="extractedPrompts">
+                <div class="extracted-header">
+                    <h3>📝 Extracted Prompts</h3>
+                    <span class="extracted-count" id="extractedCount">0</span>
+                </div>
+                <ul class="prompt-list" id="promptList"></ul>
+                <div class="extracted-footer">
+                    <button class="select-all-btn" id="selectAllBtn">☑️ Chọn tất cả</button>
+                    <button class="generate-btn" id="generateBtn">
+                        <span class="btn-text">🎨 Generate Images</span>
+                        <span class="btn-spinner"></span>
+                    </button>
+                    <span class="selected-info" id="selectedInfo">0 / 0 đã chọn</span>
+                </div>
+            </div>
+            <!-- Image Gen Config Panel -->
+            <div class="ideogram-config" id="ideogramConfig">
+                <div class="config-header">
+                    <h3>⚙️ Image Settings</h3>
+                    <div class="provider-toggle" id="imageProviderToggle">
+                        <button class="provider-btn active" data-provider="ideogram">Ideogram</button>
+                        <button class="provider-btn" data-provider="gpt-image-2">GPT Image</button>
+                    </div>
+                </div>
+
+                <!-- Ideogram config -->
+                <div id="ideogramConfigFields" class="config-grid">
+                    <div class="config-field">
+                        <label for="cfgSpeed">Rendering Speed</label>
+                        <select id="cfgSpeed">
+                            <option value="TURBO" selected>Turbo (nhanh)</option>
+                            <option value="FLASH">Flash (rất nhanh)</option>
+                            <option value="DEFAULT">Default</option>
+                            <option value="QUALITY">Quality (chất lượng)</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgAspect">Aspect Ratio</label>
+                        <select id="cfgAspect">
+                            <option value="1x1">1:1</option>
+                            <option value="4x5" selected>4:5</option>
+                            <option value="5x4">5:4</option>
+                            <option value="3x4">3:4</option>
+                            <option value="4x3">4:3</option>
+                            <option value="2x3">2:3</option>
+                            <option value="3x2">3:2</option>
+                            <option value="9x16">9:16</option>
+                            <option value="16x9">16:9</option>
+                            <option value="10x16">10:16</option>
+                            <option value="16x10">16:10</option>
+                            <option value="1x2">1:2</option>
+                            <option value="2x1">2:1</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgMagic">Magic Prompt</label>
+                        <select id="cfgMagic">
+                            <option value="AUTO">Auto</option>
+                            <option value="ON">On</option>
+                            <option value="OFF" selected>Off</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgNum">Số ảnh / prompt</label>
+                        <input type="number" id="cfgNum" value="1" min="1" max="8">
+                    </div>
+                    <div class="config-field full-width">
+                        <label for="cfgNegative">Negative Prompt</label>
+                        <input type="text" id="cfgNegative" placeholder="Mô tả những gì không muốn xuất hiện trong ảnh...">
+                    </div>
+                </div>
+
+                <!-- GPT Image config -->
+                <div id="gptImageConfigFields" style="display:none;">
+                    <!-- API Type selector -->
+                    <div class="config-grid" style="padding-bottom: 0;">
+                        <div class="config-field">
+                            <label for="cfgGptApiType">API Type</label>
+                            <select id="cfgGptApiType">
+                                <option value="image_api" selected>Image API</option>
+                                <option value="responses_api">Responses API</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Image API fields -->
+                    <div id="gptImageApiFields" class="config-grid">
+                        <div class="config-field">
+                            <label for="cfgGptModel">Model</label>
+                            <select id="cfgGptModel">
+                                <option value="gpt-image-2" selected>GPT Image 2</option>
+                                <option value="gpt-image-1.5">GPT Image 1.5</option>
+                            </select>
+                        </div>
+                    <div class="config-field">
+                        <label for="cfgGptQuality">Quality</label>
+                        <select id="cfgGptQuality">
+                            <option value="low">Low (nháp)</option>
+                            <option value="medium" selected>Medium (khuyến nghị)</option>
+                            <option value="high">High (tốt nhất)</option>
+                            <option value="auto">Auto</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgGptSize">Size</label>
+                        <select id="cfgGptSize">
+                            <option value="1024x1024">1024×1024 (square)</option>
+                            <option value="1024x1536" selected>1024×1536 (portrait)</option>
+                            <option value="1536x1024">1536×1024 (landscape)</option>
+                            <option value="2048x2048">2048×2048 (2K square)</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgGptModeration">Moderation</label>
+                        <select id="cfgGptModeration">
+                            <option value="low" selected>Low (ít bị chặn)</option>
+                            <option value="auto">Auto (mặc định)</option>
+                        </select>
+                    </div>
+                    <div class="config-field">
+                        <label for="cfgGptNum">Số ảnh / prompt</label>
+                        <input type="number" id="cfgGptNum" value="1" min="1" max="10">
+                    </div>
+                        <div class="config-field">
+                            <label for="cfgGptBackground">Background</label>
+                            <select id="cfgGptBackground">
+                                <option value="auto" selected>Auto (model tự chọn)</option>
+                                <option value="opaque">Opaque (nền đặc)</option>
+                                <option value="transparent">Transparent (thử nghiệm)</option>
+                            </select>
+                        </div>
+                        <div class="config-field">
+                            <label for="cfgGptRemoveBg">Xóa nền</label>
+                            <select id="cfgGptRemoveBg">
+                                <option value="">Tắt</option>
+                                <option value="ideogram">Ideogram Remove Background</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Responses API fields -->
+                    <div id="gptResponsesApiFields" class="config-grid" style="display:none;">
+                        <div class="config-field">
+                            <label for="cfgRespModel">Model</label>
+                            <select id="cfgRespModel">
+                                <option value="gpt-5.5">gpt-5.5</option>
+                                <option value="gpt-5.4">gpt-5.4</option>
+                                <option value="gpt-4.1" selected>gpt-4.1</option>
+                                <option value="gpt-4o">gpt-4o</option>
+                            </select>
+                        </div>
+                        <div class="config-field">
+                            <label for="cfgRespQuality">Quality</label>
+                            <select id="cfgRespQuality">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                        </div>
+                        <div class="config-field">
+                            <label for="cfgRespSize">Size</label>
+                            <select id="cfgRespSize">
+                                <option value="1024x1024">1024×1024</option>
+                                <option value="1024x1536" selected>1024×1536 (portrait)</option>
+                                <option value="1536x1024">1536×1024 (landscape)</option>
+                                <option value="2048x2048">2048×2048</option>
+                            </select>
+                        </div>
+                        <div class="config-field">
+                            <label for="cfgRespBackground">Background</label>
+                            <select id="cfgRespBackground">
+                                <option value="auto" selected>Auto</option>
+                                <option value="opaque">Opaque</option>
+                                <option value="transparent">Transparent (thử nghiệm)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Generated Images Gallery -->
+            <div class="generated-gallery" id="generatedGallery">
+                <div class="gallery-header">
+                    <h3>🖼️ Generated Images</h3>
+                    <span class="gallery-progress" id="galleryProgress" style="margin-left: 10px;"></span>
+                    <div style="margin-left: auto; display: flex; gap: 8px;">
+                        <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Chọn tất cả Youth</button>
+                        <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Bỏ chọn tất cả</button>
+                    </div>
+                </div>
+                <div class="gallery-grid" id="galleryGrid"></div>
+                <div class="gallery-footer" style="padding: 16px 20px; background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.08);">
+                    <div class="config-field full-width" style="margin-bottom: 12px;">
+                        <label for="cfgFilename">Download Filename (Prefix) <span id="filenameCount" style="color: #a78bfa; font-weight: 600; margin-left: 5px; font-size: 10px; text-transform: none;">(0 characters)</span></label>
+                        <input type="text" id="cfgFilename" placeholder="Nhập tên file bạn muốn đặt...">
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <button id="downloadSelectedBtn" class="regen-btn" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 11px; padding: 6px 12px; display: none;">
+                            ⬇️ Tải ảnh đã chọn
+                        </button>
+                        <button id="uploadDriveBtn" class="regen-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 11px; padding: 6px 12px; display: none;">
+                            <span class="btn-spinner" style="width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; margin-right: 5px;"></span>
+                            <span class="btn-text">☁️ Upload Drive & Sheet</span>
+                        </button>
+                        <div id="uploadStatus" style="font-size: 11px; color: #34d399; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="analysis.js"></script>
+</body>
+</html>

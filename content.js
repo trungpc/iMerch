@@ -109,9 +109,15 @@ chrome.storage.sync.get([
   logger.log('Loaded settings:', settings);
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', processProducts);
+    document.addEventListener('DOMContentLoaded', () => {
+      processProducts();
+      addButtonsToProductPage();
+      if (window.location.pathname === '/s') trySortBarInject();
+    });
   } else {
     processProducts();
+    addButtonsToProductPage();
+    if (window.location.pathname === '/s') trySortBarInject();
   }
   setupObserver();
 });
@@ -351,9 +357,12 @@ function createInfoBox(data) {
       <span><strong>Rank:</strong> ${rank}</span>
       <span>${date}</span>
     </div>
-    <div style="margin-top: 5px;">
+    <div style="margin-top: 5px; display: flex; justify-content: space-between; align-items: center;">
       <button class="amasort-price-history" style="padding: 2px 6px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; background: transparent; border-radius: 3px;">
         📊 Price History
+      </button>
+      <button class="amasort-design-analysis" style="padding: 2px 6px; font-size: 12px; cursor: pointer; border: 1px solid #a78bfa; background: transparent; border-radius: 3px; color: #6d28d9;">
+        🎨 Design Analysis
       </button>
     </div>
   `;
@@ -402,6 +411,26 @@ function createInfoBox(data) {
     });
   }
 
+  const designAnalysisButton = box.querySelector(".amasort-design-analysis");
+  if (designAnalysisButton) {
+    designAnalysisButton.addEventListener("click", () => {
+      const imageUrl = sku
+        ? `https://m.media-amazon.com/images/I/${sku}.png`
+        : "";
+      if (!imageUrl) {
+        alert("Hi-res image not found. Please try another product.");
+        return;
+      }
+      logger.log(`Design Analysis clicked - ASIN: ${asin}`);
+      chrome.runtime.sendMessage({
+        action: "copyAIPrompt",
+        imageUrl,
+        asin,
+        title: data.title || ""
+      });
+    });
+  }
+
   return box;
 }
 
@@ -425,6 +454,7 @@ async function processProduct(product) {
     } else {
       product.insertBefore(infoBox, product.firstChild);
     }
+    tagProductForSort(product, cached);
     return { success: true, cached: true };
   }
 
@@ -454,6 +484,7 @@ async function processProduct(product) {
     } else {
       product.insertBefore(infoBox, product.firstChild);
     }
+    tagProductForSort(product, data);
 
     logger.log(`✓ Added info box for ${asin}`);
     return { success: true, cached: false };
@@ -466,6 +497,12 @@ async function processProduct(product) {
 // Global state for processing lock
 let isProcessing = false;
 let hasPendingUpdates = false;
+
+// Sort / load-more state
+let originalOrder = null;
+let currentSort = null;
+let loadedExtraPages = 0;
+let isLoadingPages = false;
 
 // Process all products - Sequential mode
 async function processProductsSequential(products) {
@@ -556,3 +593,272 @@ function setupObserver() {
 }
 
 logger.log('Script initialized');
+
+// ====== Sort & Load-more feature ======
+
+function tagProductForSort(product, data) {
+  const rankNum = data.rank !== "N/A" ? parseInt(data.rank.replace(/,/g, "")) : 999999999;
+  const dateTs  = data.date !== "N/A" ? (new Date(data.date).getTime() || 0) : 0;
+  product.dataset.imerchRank = rankNum;
+  product.dataset.imerchDate = dateTs;
+}
+
+function saveOriginalOrder() {
+  if (originalOrder) return;
+  const slot = document.querySelector('.s-main-slot');
+  if (slot) originalOrder = Array.from(slot.children);
+}
+
+function sortProducts(by) {
+  saveOriginalOrder();
+  const slot = document.querySelector('.s-main-slot');
+  if (!slot) return;
+
+  const processed   = Array.from(slot.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]'));
+  const unprocessed = Array.from(slot.querySelectorAll('.s-result-item[data-asin]:not([data-imerch-rank])'));
+
+  processed.sort((a, b) => {
+    if (by === 'rank') {
+      return (parseInt(a.dataset.imerchRank) || 999999999) - (parseInt(b.dataset.imerchRank) || 999999999);
+    }
+    return (parseInt(b.dataset.imerchDate) || 0) - (parseInt(a.dataset.imerchDate) || 0);
+  });
+
+  [...processed, ...unprocessed].forEach(el => slot.appendChild(el));
+  currentSort = by;
+  updateSortButtonState();
+}
+
+function resetSort() {
+  if (!originalOrder) return;
+  const slot = document.querySelector('.s-main-slot');
+  if (!slot) return;
+  originalOrder.forEach(el => slot.appendChild(el));
+  currentSort = null;
+  updateSortButtonState();
+}
+
+function updateSortButtonState() {
+  const rankBtn = document.getElementById('imerch-btn-rank');
+  const dateBtn = document.getElementById('imerch-btn-date');
+  const active  = 'background:#ff9900; color:#fff; border-color:#e68900;';
+  const normal  = 'background:#fff; color:inherit; border-color:#ccc;';
+  if (rankBtn) rankBtn.style.cssText = rankBtn.style.cssText.replace(/background:[^;]+;.*?color:[^;]+;.*?border-color:[^;]+;/, currentSort === 'rank' ? active : normal);
+  if (dateBtn) dateBtn.style.cssText = dateBtn.style.cssText.replace(/background:[^;]+;.*?color:[^;]+;.*?border-color:[^;]+;/, currentSort === 'date' ? active : normal);
+}
+
+async function loadMorePages(count) {
+  if (isLoadingPages) return;
+  isLoadingPages = true;
+
+  const statusEl = document.getElementById('imerch-load-status');
+  const slot = document.querySelector('.s-main-slot');
+  if (!slot) { isLoadingPages = false; return; }
+
+  const url = new URL(window.location.href);
+  const basePage = parseInt(url.searchParams.get('page') || '1');
+
+  for (let i = 1; i <= count; i++) {
+    const targetPage = basePage + loadedExtraPages + i;
+    if (statusEl) statusEl.textContent = `Loading page ${targetPage}...`;
+
+    try {
+      url.searchParams.set('page', targetPage);
+      const response = await fetch(url.href, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+      });
+      if (!response.ok) break;
+
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const items = doc.querySelectorAll('.s-result-item[data-asin]:not(.AdHolder)');
+
+      let injected = 0;
+      items.forEach(item => {
+        if (!item.dataset.asin) return;
+        if (document.querySelector(`.s-result-item[data-asin="${item.dataset.asin}"]`)) return;
+        slot.appendChild(document.adoptNode(item));
+        injected++;
+      });
+
+      if (statusEl) statusEl.textContent = `Page ${targetPage}: +${injected} products`;
+      logger.log(`Loaded page ${targetPage}: +${injected} items`);
+
+      if (i < count) await randomDelay(settings.delayMin, settings.delayMax);
+    } catch (err) {
+      logger.error('Error loading page:', err);
+      break;
+    }
+  }
+
+  loadedExtraPages += count;
+  isLoadingPages = false;
+  if (statusEl) setTimeout(() => {
+    statusEl.textContent = `+${loadedExtraPages} pages loaded`;
+  }, 2000);
+
+  // Re-apply sort if active
+  if (currentSort) sortProducts(currentSort);
+}
+
+function injectSortBar() {
+  if (document.querySelector('#imerch-sort-bar')) return true;
+  const sortSelect = document.querySelector('#s-result-sort-select');
+  if (!sortSelect) return false;
+
+  // Tìm cột breadcrumb với nhiều fallback selectors
+  const sgRow = sortSelect.closest('.sg-row') || document.querySelector('.sg-row');
+  const breadcrumbCol =
+    sgRow?.querySelector('.s-breadcrumb') ||
+    sgRow?.querySelector('[class*="breadcrumb"]') ||
+    document.querySelector('.s-breadcrumb') ||
+    document.querySelector('[class*="breadcrumb"]');
+  const colInner = breadcrumbCol?.querySelector('.sg-col-inner') || breadcrumbCol;
+
+  // Fallback: nếu không tìm được breadcrumb, inject vào trước form Sort by
+  const insertTarget = colInner || sortSelect.closest('form')?.parentElement;
+  if (!insertTarget) return false;
+
+  // Bar gọn ~150px để vừa cùng hàng với "Sort by:~130px" trong cột ~300px
+  const btn     = 'padding:2px 5px; font-size:11px; cursor:pointer; border:1px solid #ccc; background:#fff; border-radius:3px; line-height:1.4; vertical-align:middle;';
+  const loadBtn = 'padding:2px 5px; font-size:11px; cursor:pointer; border:1px solid #a78bfa; background:#fff; border-radius:3px; color:#6d28d9; line-height:1.4; vertical-align:middle;';
+
+  const bar = document.createElement('span');
+  bar.id = 'imerch-sort-bar';
+  bar.style.cssText = 'display:flex; align-items:center; gap:3px; white-space:nowrap;';
+  bar.innerHTML = `
+    <button id="imerch-btn-rank" style="${btn}" title="Sort by BSR (low → high)">📊 Rank</button>
+    <button id="imerch-btn-date" style="${btn}" title="Sort by Date (newest first)">📅 Date</button>
+    <button id="imerch-btn-reset" style="${btn}" title="Reset to Amazon order">↺</button>
+    <span style="color:#ddd;margin:0 2px;">|</span>
+    <button id="imerch-btn-load1" style="${loadBtn}" title="Load 1 more page">+1</button>
+    <button id="imerch-btn-load3" style="${loadBtn}" title="Load 3 more pages">+3</button>
+    <button id="imerch-btn-load5" style="${loadBtn}" title="Load 5 more pages">+5</button>
+    <button id="imerch-btn-load10" style="${loadBtn}" title="Load 10 more pages">+10</button>
+    <span id="imerch-load-status" style="font-size:10px;color:#888;"></span>
+  `;
+
+  if (colInner && breadcrumbCol) {
+    // Breadcrumb mode: absolute, không đụng layout
+    breadcrumbCol.style.position = 'relative';
+    bar.style.position = 'absolute';
+    bar.style.right = '0';
+    bar.style.top = '50%';
+    bar.style.transform = 'translateY(-50%)';
+    colInner.appendChild(bar);
+  } else {
+    // Fallback: inline trước form Sort by
+    bar.style.cssText += '; display:inline-flex; vertical-align:middle; margin-right:8px;';
+    insertTarget.insertBefore(bar, sortSelect.closest('form'));
+  }
+
+  document.getElementById('imerch-btn-rank').addEventListener('click', () => sortProducts('rank'));
+  document.getElementById('imerch-btn-date').addEventListener('click', () => sortProducts('date'));
+  document.getElementById('imerch-btn-reset').addEventListener('click', resetSort);
+  document.getElementById('imerch-btn-load1').addEventListener('click', () => loadMorePages(1));
+  document.getElementById('imerch-btn-load3').addEventListener('click', () => loadMorePages(3));
+  document.getElementById('imerch-btn-load5').addEventListener('click', () => loadMorePages(5));
+  document.getElementById('imerch-btn-load10').addEventListener('click', () => loadMorePages(10));
+
+  logger.log('iMerch sort bar injected');
+  return true;
+}
+
+function trySortBarInject(attempts = 0) {
+  if (injectSortBar()) return;
+  if (attempts < 10) setTimeout(() => trySortBarInject(attempts + 1), 800);
+}
+
+// Trích SKU từ inline scripts của product page (giống cách search results làm)
+function extractSkuFromPageScripts() {
+  for (const script of document.querySelectorAll('script')) {
+    const match = script.textContent.match(/"hiRes":"https:\/\/m\.media-amazon\.com\/images\/I\/([^"]+)"/);
+    if (match) {
+      const parts = match[1].split(".png")[0].split("%7C");
+      if (parts.length > 1) return parts[parts.length - 1];
+    }
+  }
+  return null;
+}
+
+// Xử lý trang chi tiết sản phẩm — thêm nút Price History + Design Analysis dưới ảnh
+function addButtonsToProductPage() {
+  if (document.querySelector(".imerch-product-tools")) return;
+
+  const leftCol = document.querySelector("#leftCol") || document.querySelector(".leftCol") || document.querySelector("#imageBlock");
+  if (!leftCol) return;
+
+  const imageEl = document.querySelector("#landingImage") || document.querySelector("#imgBlkFront") || leftCol.querySelector("img");
+  if (!imageEl) return;
+
+  // Ưu tiên hi-res design image (không có áo), fallback về thumbnail
+  const sku = extractSkuFromPageScripts();
+  const imageUrl = sku
+    ? `https://m.media-amazon.com/images/I/${sku}.png`
+    : imageEl.src;
+
+  const getAsin = () => {
+    const selectors = ['#asin', '#ASIN', 'input[name="ASIN"]', 'input[name="asin"]', '[data-asin]'];
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      const val = el?.value || el?.getAttribute('data-asin');
+      if (val && val.length === 10) return val;
+    }
+    const urlMatch = window.location.href.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+    if (urlMatch) return urlMatch[1];
+    return "";
+  };
+
+  const asin = getAsin();
+  const title = document.querySelector("#productTitle")?.innerText.trim() || "";
+
+  const container = document.createElement("div");
+  container.className = "imerch-product-tools";
+  container.style.cssText = "margin-top: 15px; margin-bottom: 15px; display: flex; gap: 8px; flex-wrap: wrap;";
+
+  const priceHistoryBtn = document.createElement("button");
+  priceHistoryBtn.innerText = "📊 Price History";
+  priceHistoryBtn.style.cssText = "padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: transparent; border-radius: 5px;";
+  priceHistoryBtn.onclick = () => {
+    if (asin) showKeepaModal(asin);
+  };
+
+  const analysisBtn = document.createElement("button");
+  analysisBtn.innerText = "🎨 Design Analysis";
+  analysisBtn.style.cssText = "padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #a78bfa; background: transparent; border-radius: 5px; color: #6d28d9; font-weight: 500;";
+  analysisBtn.onclick = () => {
+    if (!imageUrl) {
+      alert("Product image not found for analysis.");
+      return;
+    }
+    chrome.runtime.sendMessage({
+      action: "copyAIPrompt",
+      imageUrl,
+      asin,
+      title
+    });
+  };
+
+  container.appendChild(priceHistoryBtn);
+  container.appendChild(analysisBtn);
+
+  if (sku) {
+    const downloadBtn = document.createElement("button");
+    downloadBtn.innerText = "⬇ Download";
+    downloadBtn.style.cssText = "padding: 8px 14px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; border-radius: 5px;";
+    downloadBtn.onclick = () => {
+      downloadBtn.disabled = true;
+      downloadBtn.innerText = "Downloading...";
+      chrome.runtime.sendMessage({ action: "processImage", asin, sku, title }, (response) => {
+        downloadBtn.disabled = false;
+        downloadBtn.innerText = "⬇ Download";
+        if (response?.error) alert(`Download failed: ${response.error}`);
+      });
+    };
+    container.appendChild(downloadBtn);
+  }
+
+  leftCol.appendChild(container);
+  logger.log(`Product page buttons added for ASIN: ${asin}`);
+}

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iMerch — Design Analysis Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+    }
+
+    .header {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .header h1 {
+      font-size: 20px; font-weight: 600;
+      background: linear-gradient(135deg, #a78bfa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 32px auto;
+      padding: 0 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.15);
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+      font-size: 11px; font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+
+    .field input[type="text"],
+    .field input[type="number"],
+    .field select,
+    .field textarea {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: rgba(255,255,255,0.9);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: rgba(167,139,250,0.5);
+      box-shadow: 0 0 0 3px rgba(167,139,250,0.1);
+    }
+
+    .field select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .field select option { background: #24243e; color: #e0e0e0; }
+
+    .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+    .checkbox-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: #a78bfa;
+      cursor: pointer;
+    }
+
+    .checkbox-row label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      cursor: pointer;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .provider-toggle {
+      display: flex; gap: 4px;
+      background: rgba(0,0,0,0.2);
+      padding: 4px; border-radius: 10px;
+      width: fit-content;
+    }
+
+    .provider-btn {
+      background: transparent; border: none;
+      color: rgba(255,255,255,0.5);
+      padding: 6px 18px; border-radius: 8px;
+      font-size: 13px; font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    .provider-btn.active {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+    }
+
+    .provider-btn:hover:not(.active) {
+      color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .save-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none; color: #fff;
+      padding: 12px 28px; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: all 0.2s;
+      align-self: flex-start;
+    }
+
+    .save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(102,126,234,0.4); }
+    .save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .status {
+      font-size: 13px; padding: 10px 14px;
+      border-radius: 8px; display: none;
+    }
+    .status.success { background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+    .status.error   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+
+    #geminiSection, #openaiSection, #ideogramSection { display: flex; flex-direction: column; gap: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">⚙️</div>
+  <h1>Design Analysis Settings</h1>
+</div>
+
+<div class="container">
+
+  <!-- AI Provider -->
+  <div class="card">
+    <div class="card-header">🤖 AI Provider</div>
+    <div class="card-body">
+      <div class="provider-toggle" id="providerToggle">
+        <button class="provider-btn active" data-provider="gemini">Gemini</button>
+        <button class="provider-btn" data-provider="openai">OpenAI</button>
+        <button class="provider-btn" data-provider="ideogram">Ideogram</button>
+      </div>
+
+      <div id="geminiSection">
+        <div class="field">
+          <label>Gemini API Key</label>
+          <input type="text" id="geminiKey" placeholder="AIza...">
+        </div>
+        <div class="field">
+          <label>Gemini Model</label>
+          <select id="geminiModel">
+            <optgroup label="Gemini 3 (latest)">
+              <option value="gemini-3.5-flash" selected>gemini-3.5-flash (recommended)</option>
+              <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+            </optgroup>
+            <optgroup label="Gemini 2.5">
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="useGoogleSearch">
+          <label for="useGoogleSearch">Enable Google Search Grounding</label>
+        </div>
+      </div>
+
+      <div id="openaiSection" style="display:none;">
+        <div class="field">
+          <label>OpenAI API Key</label>
+          <input type="text" id="openaiKey" placeholder="sk-...">
+        </div>
+        <div class="field">
+          <label>OpenAI Model</label>
+          <select id="openaiModel">
+            <optgroup label="GPT-5 — most capable">
+              <option value="gpt-5.5">gpt-5.5</option>
+              <option value="gpt-5.4">gpt-5.4</option>
+            </optgroup>
+            <optgroup label="GPT-5 — faster">
+              <option value="gpt-5.4-mini">gpt-5.4-mini</option>
+              <option value="gpt-5.4-nano">gpt-5.4-nano</option>
+              <option value="gpt-5-mini">gpt-5-mini</option>
+              <option value="gpt-5-nano">gpt-5-nano</option>
+            </optgroup>
+            <optgroup label="GPT-4.1">
+              <option value="gpt-4.1" selected>gpt-4.1</option>
+              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+              <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+            </optgroup>
+            <optgroup label="GPT-4o">
+              <option value="gpt-4o">gpt-4o</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="useOpenaiWebSearch">
+          <label for="useOpenaiWebSearch">Enable Web Search (real-time trend)</label>
+        </div>
+      </div>
+
+      <div id="ideogramSection" style="display:none;">
+        <div class="field">
+          <label>Ideogram API Key</label>
+          <input type="text" id="ideogramKey" placeholder="Enter Ideogram API Key">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis Prompt -->
+  <div class="card">
+    <div class="card-header">✏️ Custom Analysis Prompt</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Prompt (leave empty to use default)</label>
+        <textarea id="promptVN" placeholder="Enter custom design analysis prompt..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Integration -->
+  <div class="card">
+    <div class="card-header">☁️ Google Drive & Sheets</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Google Client ID (OAuth2)</label>
+        <input type="text" id="googleClientId" placeholder="Client ID from Google Cloud Console">
+        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:4px;">
+          Redirect URI: <span id="currentRedirectUri" style="color:#a78bfa; word-break:break-all;">Loading...</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Google Drive Folder ID</label>
+        <input type="text" id="driveFolderId" placeholder="Google Drive Folder ID">
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Google Sheet ID</label>
+          <input type="text" id="sheetId" placeholder="Sheet ID">
+        </div>
+        <div class="field">
+          <label>Sheet Name (Design)</label>
+          <input type="text" id="sheetName" placeholder="Sheet tab name">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Mapping -->
+  <div class="card">
+    <div class="card-header">📋 Column Mapping</div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>ASIN Column Header</label>
+          <input type="text" id="colAsinHeader" placeholder="e.g. ASIN">
+        </div>
+        <div class="field">
+          <label>Title Column Header</label>
+          <input type="text" id="colTitleHeader" placeholder="e.g. Title">
+        </div>
+        <div class="field">
+          <label>Drive URL Column Header</label>
+          <input type="text" id="colUrlHeader" placeholder="e.g. URL">
+        </div>
+        <div class="field">
+          <label>Youth Column Header</label>
+          <input type="text" id="colYouthHeader" placeholder="e.g. Youth">
+        </div>
+        <div class="field">
+          <label>Colors Column Header</label>
+          <input type="text" id="colColorsHeader" placeholder="e.g. Colors">
+        </div>
+        <div class="field">
+          <label>Max Filename Length</label>
+          <input type="number" id="maxFilenameLength" value="60" min="1" max="255">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:14px;">
+    <button class="save-btn" id="saveBtn">💾 Save Settings</button>
+    <div class="status" id="status"></div>
+  </div>
+
+</div>
+
+<script src="design-settings.js"></script>
+</body>
+</html>
