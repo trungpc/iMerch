@@ -51,7 +51,7 @@
 
     btn = document.createElement('button');
     btn.id = BTN_ID;
-    btn.innerHTML = '🎨 Phân tích';
+    btn.innerHTML = '🎨 Analyze';
     btn.style.cssText = `
       position: fixed;
       z-index: 2147483647;
