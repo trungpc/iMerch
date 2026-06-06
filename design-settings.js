@@ -60,7 +60,8 @@ const KEYS = [
   "autoCheckModel", "autoCheckPrompt",
   "sheetId", "sheetName", "googleClientId", "driveFolderId",
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
-  "maxFilenameLength"
+  "maxFilenameLength",
+  "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -131,6 +132,12 @@ chrome.storage.sync.get(KEYS, (result) => {
   setVal("colYouthHeader", result.colYouthHeader);
   setVal("colColorsHeader", result.colColorsHeader);
   if (result.maxFilenameLength) document.getElementById("maxFilenameLength").value = result.maxFilenameLength;
+
+  // Image Hover Analysis
+  setCheck("hoverEnabled", result.hoverEnabled !== false); // default true
+  document.getElementById("hoverMinWidth").value = result.hoverMinWidth ?? 300;
+  setVal("hoverBtnPosition", result.hoverBtnPosition || "top-right");
+  document.getElementById("hoverBlacklist").value = result.hoverBlacklist || "";
 });
 
 // Fetch models from API
@@ -284,6 +291,10 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     colYouthHeader: getVal("colYouthHeader"),
     colColorsHeader: getVal("colColorsHeader"),
     maxFilenameLength: parseInt(document.getElementById("maxFilenameLength")?.value) || 60,
+    hoverEnabled: getCheck("hoverEnabled"),
+    hoverMinWidth: parseInt(document.getElementById("hoverMinWidth")?.value) || 300,
+    hoverBtnPosition: getVal("hoverBtnPosition") || "top-right",
+    hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
   };
 
   chrome.storage.sync.set(settings, () => {

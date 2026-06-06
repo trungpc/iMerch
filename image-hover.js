@@ -1,14 +1,48 @@
 // iMerch - Universal Image Hover Analysis Button
-// Hiển thị nút "🎨 Phân tích" khi hover lên ảnh bất kỳ có chiều rộng >= 300px
+// Hiển thị nút "🎨 Phân tích" khi hover lên ảnh bất kỳ theo cấu hình
 
 (function () {
   'use strict';
 
-  const MIN_WIDTH = 300; // px
   const BTN_ID = 'imerch-img-hover-btn';
+
+  // Config mặc định — sẽ được ghi đè bởi chrome.storage
+  let config = {
+    enabled: true,
+    minWidth: 300,
+    btnPosition: 'top-right', // top-right | top-left | bottom-right | bottom-left | center
+    blacklist: []             // danh sách domain bỏ qua
+  };
 
   let currentImg = null;
   let hideTimer = null;
+
+  // Load config từ storage
+  function loadConfig(cb) {
+    try {
+      chrome.storage.sync.get(
+        ['hoverEnabled', 'hoverMinWidth', 'hoverBtnPosition', 'hoverBlacklist'],
+        (result) => {
+          config.enabled     = result.hoverEnabled !== false;
+          config.minWidth    = parseInt(result.hoverMinWidth) || 300;
+          config.btnPosition = result.hoverBtnPosition || 'top-right';
+          config.blacklist   = (result.hoverBlacklist || '')
+            .split('\n')
+            .map(s => s.trim().toLowerCase())
+            .filter(Boolean);
+          if (cb) cb();
+        }
+      );
+    } catch (e) {
+      if (cb) cb();
+    }
+  }
+
+  // Kiểm tra domain hiện tại có bị blacklist không
+  function isBlacklisted() {
+    const host = location.hostname.toLowerCase().replace(/^www\./, '');
+    return config.blacklist.some(d => host === d || host.endsWith('.' + d));
+  }
 
   // Tạo nút nếu chưa có
   function getOrCreateBtn() {
@@ -55,12 +89,9 @@
       e.preventDefault();
       if (!currentImg) return;
 
-      const imageUrl = currentImg.src || currentImg.currentSrc;
-      if (!imageUrl || imageUrl.startsWith('data:')) {
-        return;
-      }
+      const imageUrl = currentImg.currentSrc || currentImg.src || '';
+      if (!imageUrl || imageUrl.startsWith('data:')) return;
 
-      // Gửi message tới background để mở Design Analysis
       try {
         chrome.runtime.sendMessage({
           action: 'copyAIPrompt',
@@ -69,7 +100,7 @@
           title: currentImg.alt || document.title || ''
         });
       } catch (err) {
-        // Extension context có thể bị invalidate, bỏ qua
+        // Extension context có thể bị invalidate
       }
 
       hideBtn();
@@ -79,22 +110,48 @@
     return btn;
   }
 
+  // Tính vị trí nút theo config.btnPosition
+  function calcBtnPos(rect) {
+    const btnW = 110, btnH = 32, margin = 8;
+    let left, top;
+
+    switch (config.btnPosition) {
+      case 'top-left':
+        left = rect.left + margin;
+        top  = rect.top  + margin;
+        break;
+      case 'bottom-right':
+        left = rect.right  - btnW - margin;
+        top  = rect.bottom - btnH - margin;
+        break;
+      case 'bottom-left':
+        left = rect.left + margin;
+        top  = rect.bottom - btnH - margin;
+        break;
+      case 'center':
+        left = rect.left + (rect.width  - btnW) / 2;
+        top  = rect.top  + (rect.height - btnH) / 2;
+        break;
+      case 'top-right':
+      default:
+        left = rect.right - btnW - margin;
+        top  = rect.top   + margin;
+        break;
+    }
+
+    // Clamp trong viewport
+    left = Math.max(margin, Math.min(left, window.innerWidth  - btnW - margin));
+    top  = Math.max(margin, Math.min(top,  window.innerHeight - btnH - margin));
+    return { left, top };
+  }
+
   function showBtn(img) {
     clearTimeout(hideTimer);
     currentImg = img;
 
     const rect = img.getBoundingClientRect();
-    const btn = getOrCreateBtn();
-
-    // Vị trí: góc trên-phải của ảnh, offset vào trong 8px
-    const btnWidth = 110;
-    const btnHeight = 32;
-    let left = rect.right - btnWidth - 8;
-    let top  = rect.top + 8;
-
-    // Clamp trong viewport
-    left = Math.max(8, Math.min(left, window.innerWidth - btnWidth - 8));
-    top  = Math.max(8, Math.min(top,  window.innerHeight - btnHeight - 8));
+    const btn  = getOrCreateBtn();
+    const { left, top } = calcBtnPos(rect);
 
     btn.style.left    = left + 'px';
     btn.style.top     = top  + 'px';
@@ -114,41 +171,47 @@
 
   // Kiểm tra ảnh có đủ rộng không
   function isImageWideEnough(img) {
-    // Dùng rendered width trước, fallback naturalWidth
     const w = img.offsetWidth || img.getBoundingClientRect().width || img.naturalWidth;
-    return w >= MIN_WIDTH;
+    return w >= config.minWidth;
   }
 
-  // Bỏ qua ảnh là icon/logo nhỏ, tracking pixel, v.v.
+  // Bỏ qua ảnh là icon/tracking pixel
   function shouldIgnoreImage(img) {
-    const src = img.src || img.currentSrc || '';
+    const src = img.currentSrc || img.src || '';
     if (!src || src.startsWith('data:')) return true;
-    // Bỏ qua ảnh 1x1 hoặc các icon rất nhỏ
-    if (img.naturalWidth > 0 && img.naturalWidth < 50) return true;
+    if (img.naturalWidth  > 0 && img.naturalWidth  < 50) return true;
     if (img.naturalHeight > 0 && img.naturalHeight < 50) return true;
     return false;
   }
 
-  // Event delegation trên document
-  document.addEventListener('mouseover', (e) => {
-    const img = e.target.closest('img');
-    if (!img) return;
-    if (shouldIgnoreImage(img)) return;
-    if (!isImageWideEnough(img)) return;
+  function attachListeners() {
+    document.addEventListener('mouseover', (e) => {
+      if (!config.enabled || isBlacklisted()) return;
+      const img = e.target.closest('img');
+      if (!img || shouldIgnoreImage(img) || !isImageWideEnough(img)) return;
+      showBtn(img);
+    }, true);
 
-    showBtn(img);
-  }, true);
+    document.addEventListener('mouseout', (e) => {
+      const img = e.target.closest('img');
+      if (!img || img !== currentImg) return;
+      const btn = document.getElementById(BTN_ID);
+      const rt  = e.relatedTarget;
+      if (btn && (rt === btn || btn.contains(rt))) return;
+      scheduleHide(400);
+    }, true);
 
-  document.addEventListener('mouseout', (e) => {
-    const img = e.target.closest('img');
-    if (!img || img !== currentImg) return;
+    // Reload config khi settings thay đổi
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync') return;
+      const hoverKeys = ['hoverEnabled', 'hoverMinWidth', 'hoverBtnPosition', 'hoverBlacklist'];
+      if (hoverKeys.some(k => k in changes)) {
+        loadConfig();
+      }
+    });
+  }
 
-    // Kiểm tra nếu chuột chuyển sang nút thì không ẩn
-    const relatedTarget = e.relatedTarget;
-    const btn = document.getElementById(BTN_ID);
-    if (btn && (relatedTarget === btn || btn.contains(relatedTarget))) return;
-
-    scheduleHide(400);
-  }, true);
+  // Khởi động: load config rồi gắn listeners
+  loadConfig(attachListeners);
 
 })();
