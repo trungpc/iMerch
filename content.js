@@ -1,6 +1,12 @@
 // Debug flag - set to false for production
 const DEBUG = false;
 
+function decodeHtmlEntities(str) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = str;
+  return txt.value;
+}
+
 // Logger helpers
 const logger = {
   log: (...args) => DEBUG && console.log('[iMerch]', ...args),
@@ -308,7 +314,7 @@ function extractProductInfo(html, knownAsin) {
     rank: rankMatch ? rankMatch[1] : "N/A",
     date: dateMatch ? dateMatch[1].trim() : "N/A",
     sku: sku,
-    title: titleMatch ? titleMatch[1].trim() : "N/A"
+    title: titleMatch ? decodeHtmlEntities(titleMatch[1].trim()) : "N/A"
   };
 }
 

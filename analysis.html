@@ -1255,7 +1255,12 @@
                 <div class="gallery-header">
                     <h3>🖼️ Generated Images</h3>
                     <span class="gallery-progress" id="galleryProgress" style="margin-left: 10px;"></span>
-                    <div style="margin-left: auto; display: flex; gap: 8px;">
+                    <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                        <a id="galleryAsinLink" href="#" target="_blank" style="display: none; font-size: 12px; font-weight: 600; color: #a78bfa; text-decoration: none; padding: 4px 8px; border: 1px solid #a78bfa; border-radius: 4px;" title="Mở trang Amazon">ASIN</a>
+                        <button id="autoEvaluateBtn" class="regen-btn" style="display: none; font-size: 11px; padding: 6px 12px;">
+                            <span class="btn-spinner" style="width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;display:none;margin-right:5px;"></span>
+                            <span class="btn-text">🔍 Auto Check</span>
+                        </button>
                         <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Chọn tất cả Youth</button>
                         <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Bỏ chọn tất cả</button>
                     </div>

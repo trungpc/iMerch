@@ -176,6 +176,23 @@
     .status.error   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
 
     #geminiSection, #openaiSection, #ideogramSection { display: flex; flex-direction: column; gap: 14px; }
+
+    .select-with-refresh { display: flex; gap: 8px; align-items: center; }
+    .select-with-refresh select { flex: 1; }
+
+    .refresh-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.6);
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .refresh-btn:hover { background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.4); color: #a78bfa; }
+    .refresh-btn.spinning { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -204,17 +221,22 @@
         </div>
         <div class="field">
           <label>Gemini Model</label>
-          <select id="geminiModel">
-            <optgroup label="Gemini 3 (latest)">
-              <option value="gemini-3.5-flash" selected>gemini-3.5-flash (recommended)</option>
-              <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
-            </optgroup>
-            <optgroup label="Gemini 2.5">
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-              <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-            </optgroup>
-          </select>
+          <div class="select-with-refresh">
+            <select id="geminiModel">
+              <optgroup label="Gemini 3 (latest)">
+                <option value="gemini-3.5-flash" selected>gemini-3.5-flash (recommended)</option>
+                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+              </optgroup>
+              <optgroup label="Gemini 2.5">
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+              </optgroup>
+            </select>
+            <button class="refresh-btn" id="refreshGeminiModels" title="Fetch models from API">🔄</button>
+          </div>
         </div>
         <div class="checkbox-row">
           <input type="checkbox" id="useGoogleSearch">
@@ -229,26 +251,29 @@
         </div>
         <div class="field">
           <label>OpenAI Model</label>
-          <select id="openaiModel">
-            <optgroup label="GPT-5 — most capable">
-              <option value="gpt-5.5">gpt-5.5</option>
-              <option value="gpt-5.4">gpt-5.4</option>
-            </optgroup>
-            <optgroup label="GPT-5 — faster">
-              <option value="gpt-5.4-mini">gpt-5.4-mini</option>
-              <option value="gpt-5.4-nano">gpt-5.4-nano</option>
-              <option value="gpt-5-mini">gpt-5-mini</option>
-              <option value="gpt-5-nano">gpt-5-nano</option>
-            </optgroup>
-            <optgroup label="GPT-4.1">
-              <option value="gpt-4.1" selected>gpt-4.1</option>
-              <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-              <option value="gpt-4.1-nano">gpt-4.1-nano</option>
-            </optgroup>
-            <optgroup label="GPT-4o">
-              <option value="gpt-4o">gpt-4o</option>
-            </optgroup>
-          </select>
+          <div class="select-with-refresh">
+            <select id="openaiModel">
+              <optgroup label="GPT-5 — most capable">
+                <option value="gpt-5.5">gpt-5.5</option>
+                <option value="gpt-5.4">gpt-5.4</option>
+              </optgroup>
+              <optgroup label="GPT-5 — faster">
+                <option value="gpt-5.4-mini">gpt-5.4-mini</option>
+                <option value="gpt-5.4-nano">gpt-5.4-nano</option>
+                <option value="gpt-5-mini">gpt-5-mini</option>
+                <option value="gpt-5-nano">gpt-5-nano</option>
+              </optgroup>
+              <optgroup label="GPT-4.1">
+                <option value="gpt-4.1" selected>gpt-4.1</option>
+                <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+              </optgroup>
+              <optgroup label="GPT-4o">
+                <option value="gpt-4o">gpt-4o</option>
+              </optgroup>
+            </select>
+            <button class="refresh-btn" id="refreshOpenaiModels" title="Fetch models from API">🔄</button>
+          </div>
         </div>
         <div class="checkbox-row">
           <input type="checkbox" id="useOpenaiWebSearch">
@@ -270,8 +295,34 @@
     <div class="card-header">✏️ Custom Analysis Prompt</div>
     <div class="card-body">
       <div class="field">
-        <label>Prompt (leave empty to use default)</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="margin-bottom:0;">Prompt</label>
+          <button id="resetPromptVN" style="background:none; border:none; color:rgba(167,139,250,0.7); font-size:11px; cursor:pointer; padding:0; font-family:'Inter',sans-serif;" title="Reset to default prompt">↩ Reset to default</button>
+        </div>
         <textarea id="promptVN" placeholder="Enter custom design analysis prompt..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto Check -->
+  <div class="card">
+    <div class="card-header">🔍 Auto Check Settings</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Model (leave empty to use analysis model)</label>
+        <div class="select-with-refresh">
+          <select id="autoCheckModel">
+            <option value="">— Use analysis model —</option>
+          </select>
+          <button class="refresh-btn" id="refreshAutoCheckModels" title="Fetch models from API">🔄</button>
+        </div>
+      </div>
+      <div class="field">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="margin-bottom:0;">Check Prompt</label>
+          <button id="resetAutoCheckPrompt" style="background:none; border:none; color:rgba(167,139,250,0.7); font-size:11px; cursor:pointer; padding:0; font-family:'Inter',sans-serif;" title="Reset to default prompt">↩ Reset to default</button>
+        </div>
+        <textarea id="autoCheckPrompt" placeholder="Enter custom prompt for Auto Check..."></textarea>
       </div>
     </div>
   </div>

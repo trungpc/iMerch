@@ -25,6 +25,11 @@ function decodeHtmlEntities(str) {
   return str.replace(/\u0026amp;|\u0026#39;|\u0026lt;|\u0026gt;|\u0026quot;|\u0026amp;#39;/g, (m) => entities[m] || m);
 }
 
+function decodeHtmlEntities(str) {
+  const doc = new DOMParser().parseFromString(`<!DOCTYPE html><body>${str}`, 'text/html');
+  return doc.body.textContent;
+}
+
 function extractProductInfo(html) {
   const asinMatch = html.match(/<span[^>]*>ASIN[\s\S]*?<\/span>\s*<span[^>]*>(\w{10})<\/span>/);
   const rankMatch = html.match(/Best Sellers Rank[^#]+#([\d,]+)/i);
@@ -45,7 +50,7 @@ function extractProductInfo(html) {
     date: dateMatch ? dateMatch[1].trim() : "N/A",
     imageUrl: sku ? `https://m.media-amazon.com/images/I/${sku}.png` : "",
     sku: sku,
-    title: titleMatch ? titleMatch[1].trim() : "N/A"
+    title: titleMatch ? decodeHtmlEntities(titleMatch[1].trim()) : "N/A"
   };
 }
 
@@ -483,6 +488,124 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       } catch (error) {
         addLog(`Error during regeneration: ${error.message}`);
         await chrome.storage.local.set({ [request.analysisId]: { imageUrl: request.imageUrl, analysis: null, error: error.message, asin: request.asin || "", title: request.title || "" } });
+        sendResponse({ success: false, message: error.message });
+      }
+    })();
+    return true;
+  }
+
+  if (request.action === "autoEvaluateDesigns") {
+    (async () => {
+      try {
+        const { items, designContext } = request;
+        if (!items?.length) { sendResponse({ success: false, message: "No images to evaluate." }); return; }
+        addLog(`autoEvaluateDesigns: ${items.length} images`);
+
+        const { analysisProvider, geminiKey, geminiModel, openaiKey, openaiModel, autoCheckModel, autoCheckPrompt } =
+          await new Promise(resolve => chrome.storage.sync.get(
+            ["analysisProvider", "geminiKey", "geminiModel", "openaiKey", "openaiModel", "autoCheckModel", "autoCheckPrompt"], resolve
+          ));
+        const provider = analysisProvider || "gemini";
+
+        // Fetch images as base64 (service worker không bị CORS)
+        const imageDataList = await Promise.all(items.map(async item => {
+          try {
+            if (item.url.startsWith('data:')) {
+              const [header, base64] = item.url.split(',');
+              return { ...item, base64, mimeType: header.match(/data:([^;]+)/)?.[1] || 'image/png' };
+            }
+            const res = await fetch(item.url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            const reader = new FileReader();
+            const dataUrl = await new Promise((ok, err) => {
+              reader.onloadend = () => ok(reader.result);
+              reader.onerror = err;
+              reader.readAsDataURL(blob);
+            });
+            return { ...item, base64: dataUrl.split(',')[1], mimeType: blob.type || 'image/png' };
+          } catch (e) {
+            addLog(`Failed to load image ${item.index}: ${e.message}`);
+            return { ...item, base64: null, mimeType: 'image/png' };
+          }
+        }));
+
+        const defaultCheckPrompt = `You are a t-shirt design QC expert. Analyze the image and perform 2 tasks:
+
+TASK 1 — TEXT CHECK (only if text is visible on the design):
+- Read all text visible in the image
+- Cross-check against the original text mentioned in the design description below — ensure no text was added, removed, or misspelled
+- If any issue found: describe briefly (e.g. "Spelling error: 'Hapiness' → 'Happiness'" or "Extra text added")
+- If no text visible or no issues: set hasError to false and feedback to ""
+
+TASK 2 — BACKGROUND SELECTION:
+- "black": bright/colorful design → dark background makes it pop
+- "grey": neutral tones
+- "white": dark/bold design → light background for visibility`;
+
+        const checkPromptBase = autoCheckPrompt || defaultCheckPrompt;
+        const contextBlock = designContext
+          ? `\n=== DESIGN DESCRIPTION ===\n${designContext}\n===\n`
+          : '';
+        const textPrompt = `${checkPromptBase}
+${contextBlock}
+Return ONLY a JSON object:
+{"background": "black", "hasError": false, "feedback": ""}`;
+
+        const validBg = new Set(["black", "grey", "white"]);
+
+        const allResults = await Promise.all(imageDataList.map(async img => {
+          try {
+            let raw = '{}';
+            if (provider === "openai") {
+              if (!openaiKey) throw new Error("OpenAI API key not configured.");
+              const model = autoCheckModel || openaiModel || "gpt-4o-mini";
+              const contentParts = [{ type: "input_text", text: textPrompt }];
+              if (img.base64) contentParts.push({
+                type: "input_image",
+                image_url: `data:${img.mimeType};base64,${img.base64}`,
+                detail: "high"
+              });
+              const res = await fetch("https://api.openai.com/v1/responses", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ model, input: [{ role: "user", content: contentParts }] })
+              });
+              const txt = await res.text();
+              if (!res.ok) throw new Error(`OpenAI: ${res.status} ${txt.slice(0, 200)}`);
+              raw = JSON.parse(txt)?.output?.find(o => o.type === "message")?.content?.find(c => c.type === "output_text")?.text || '{}';
+            } else {
+              if (!geminiKey) throw new Error("Gemini API key not configured.");
+              const model = autoCheckModel || geminiModel || "gemini-2.0-flash";
+              const parts = [{ text: textPrompt }];
+              if (img.base64) parts.push({ inlineData: { mimeType: img.mimeType, data: img.base64 } });
+              const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+                { method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ contents: [{ parts }], generationConfig: { response_mime_type: "application/json" } }) }
+              );
+              const txt = await res.text();
+              if (!res.ok) throw new Error(`Gemini: ${res.status} ${txt.slice(0, 200)}`);
+              raw = JSON.parse(txt)?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+            }
+            const r = JSON.parse(raw);
+            return {
+              index: img.index,
+              background: validBg.has(r.background) ? r.background : "black",
+              hasError: !!r.hasError,
+              feedback: typeof r.feedback === 'string' ? r.feedback : ''
+            };
+          } catch (e) {
+            addLog(`autoEvaluateDesigns image ${img.index} error: ${e.message}`);
+            return { index: img.index, background: "black", hasError: false, feedback: '' };
+          }
+        }));
+
+        addLog(`autoEvaluateDesigns: done, ${allResults.length} results.`);
+        sendResponse({ success: true, results: allResults });
+
+      } catch (error) {
+        addLog(`autoEvaluateDesigns error: ${error.message}`);
         sendResponse({ success: false, message: error.message });
       }
     })();

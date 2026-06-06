@@ -5,6 +5,7 @@ let currentAsin = "";
 let currentTitle = "";
 let extractedPrompts = []; // Stores all extracted prompt objects
 let maxFilenameLimit = 60; // Default limit for warning
+let currentDesignAnalysis = null; // Parsed JSON từ analysis (schema mới)
 
 // Parse URL parameters to get stored analysis data
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,20 +29,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 2. Đánh giá khả năng vi phạm bản quyền về nội dung thiết kế này ở thị trường Hoa Kỳ.
 
-3. Phân khúc đối tượng khách hàng chính dành cho thiết kế này ở thị trường Hoa Kỳ theo nhân khẩu học là những ai? Hãy đưa ra phương án cải tiến về phong cách thiết kế phù hợp hơn cho từng đối tượng khách hàng mà vẫn giữ nguyên nội dung thiết kế gốc.
-
-4. Với mỗi đối tượng khách hàng, hãy tạo 3 prompt sử dụng ideogram để tạo thiết kế mới. Mỗi prompt phải:
+3. Phân khúc đối tượng khách hàng chính dành cho thiết kế này ở thị trường Hoa Kỳ theo nhân khẩu học là những ai? Với mỗi đối tượng khách hàng, hãy đưa ra phương án cải tiến về phong cách thiết kế phù hợp hơn mà vẫn giữ nguyên nội dung thiết kế gốc và dựa vào đó để tạo ra 3 prompt sử dụng ideogram để tạo thiết kế mới. Mỗi prompt phải:
 - Mô tả chi tiết Layout (ưu tiên sự đơn giản, không sử dụng dạng thiết kế túi áo Small Chest).
 - Nếu có chữ thì đặt trong "ngoặc kép", giữ nguyên phần nội dung chữ, không thêm hoặc bớt chữ nào.
 - Mô tả chi tiết những điểm nhấn quan trọng tạo nên cảm xúc của thiết kế được phân tích ở bước 1.
 - Áp dụng phong cách thiết kế cải tiến theo phân tích ở bước 3.
 - Tuyệt đối không dùng tên thương hiệu/nhân vật có bản quyền.
 
-Phần prompt trả về dạng JSON (không markdown, không giải thích):
+Trả lời theo cấu trúc JSON (không markdown, không giải thích):
+{
+"content": "nội dung phân tích về nội dung ở bước 1",
+"copyright": "nội dung phân tích về bản quyền ở bước 2",
+"prompts":
 [
   {
     "audience": "Men",
-    "note": "mô tả theo phân tích ở bước 4",
+    "note": "mô tả phương án cải tiến",
     "styles": [
       {
         "name": "Vintage Comic Style",
@@ -58,7 +61,8 @@ Phần prompt trả về dạng JSON (không markdown, không giải thích):
     "note": "...",
     "styles": [...]
   }
-]`;
+]
+}`;
         const promptVN = result.promptVN || defaultPrompt;
         document.getElementById('promptTextarea').value = promptVN;
     });
@@ -88,7 +92,13 @@ Phần prompt trả về dạng JSON (không markdown, không giải thích):
         // Display metadata
         const asinEl = document.getElementById('asinDisplay');
         if (currentAsin) {
-            asinEl.innerHTML = `<a href="https://www.amazon.com/dp/${currentAsin}" target="_blank" style="color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;" title="Mở trang Amazon">ASIN: ${currentAsin} 🔗</a>`;
+            asinEl.innerHTML = `<a href="https://www.amazon.com/dp/${currentAsin}" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;" title="Mở trang Amazon">${currentAsin}</a>`;
+            const galleryAsinLink = document.getElementById('galleryAsinLink');
+            if (galleryAsinLink) {
+                galleryAsinLink.href = `https://www.amazon.com/dp/${currentAsin}`;
+                galleryAsinLink.textContent = currentAsin;
+                galleryAsinLink.style.display = 'inline-block';
+            }
         } else {
             asinEl.textContent = "";
         }
@@ -130,6 +140,9 @@ Phần prompt trả về dạng JSON (không markdown, không giải thích):
 
     // Setup Select All Youth button
     setupSelectAllYouthButton();
+
+    // Setup Auto Check button
+    setupAutoEvaluateButton();
 
     // Setup Image Provider Toggle
     setupImageProviderToggle();
@@ -257,8 +270,31 @@ function pollForResult(analysisId, onComplete) {
 
 function showAnalysis(text) {
     const container = document.getElementById('analysisContent');
-    const formatted = formatMarkdown(text);
-    container.innerHTML = `<div class="analysis-content">${formatted}</div>`;
+
+    // Thử parse JSON schema mới trước
+    let parsed = null;
+    try {
+        const raw = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
+        parsed = JSON.parse(raw);
+    } catch (e) {}
+
+    if (parsed && parsed.content && Array.isArray(parsed.prompts)) {
+        const flatStr = v => {
+            if (!v) return '';
+            if (typeof v === 'string') return v;
+            if (Array.isArray(v)) return v.map(flatStr).filter(Boolean).join('\n\n');
+            if (typeof v === 'object') return Object.values(v).map(flatStr).filter(Boolean).join('\n\n');
+            return String(v);
+        };
+        parsed.content = flatStr(parsed.content);
+        parsed.copyright = flatStr(parsed.copyright);
+        parsed.audiences = flatStr(parsed.audiences);
+        currentDesignAnalysis = parsed;
+        renderAnalysisJSON(parsed, container);
+    } else {
+        currentDesignAnalysis = null;
+        container.innerHTML = `<div class="analysis-content">${formatMarkdown(text)}</div>`;
+    }
 
     // Update timestamp
     document.getElementById('timestamp').textContent = new Date().toLocaleString();
@@ -286,6 +322,29 @@ function showAnalysis(text) {
     tryExtractPrompts(text);
 }
 
+function renderAnalysisJSON(data, container) {
+    const toStr = v => {
+        if (!v) return '';
+        if (typeof v === 'string') return v;
+        if (Array.isArray(v)) return v.map(toStr).filter(Boolean).join('\n\n');
+        if (typeof v === 'object') return Object.values(v).map(toStr).filter(Boolean).join('\n\n');
+        return String(v);
+    };
+    const section = (icon, title, text) => {
+        const str = toStr(text);
+        return str
+            ? `<h3 style="margin:16px 0 8px; font-size:14px; color:#a78bfa;">${icon} ${title}</h3><div class="analysis-content">${formatMarkdown(str)}</div>`
+            : '';
+    };
+    const audiencesText = Array.isArray(data.prompts)
+        ? data.prompts.map(g => g.note ? `**${g.audience}**: ${g.note}` : '').filter(Boolean).join('\n\n')
+        : '';
+    container.innerHTML =
+        section('🎨', 'Design Content Analysis', data.content) +
+        section('⚖️', 'Copyright Evaluation', data.copyright) +
+        section('👥', 'Audience Segmentation & Design Improvements', audiencesText);
+}
+
 function showError(message) {
     const container = document.getElementById('analysisContent');
     container.innerHTML = `
@@ -310,8 +369,15 @@ function tryExtractPrompts(text) {
         try { return JSON.parse(s.trim()); } catch (e) { return null; }
     };
 
-    // 1. Direct parse (AI returned pure JSON)
-    jsonData = tryParse(text);
+    // 0. Schema mới: JSON object với field "prompts" (lowercase)
+    const stripped0 = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
+    const fullParsed = tryParse(stripped0);
+    if (fullParsed && fullParsed.content && Array.isArray(fullParsed.prompts)) {
+        jsonData = fullParsed.prompts;
+    }
+
+    // 1. Direct parse (AI returned pure JSON array)
+    if (!jsonData) jsonData = tryParse(text);
 
     // 2. Strip markdown code fences: ```json ... ```
     if (!jsonData) {
@@ -592,6 +658,8 @@ async function startImageGeneration(prompts, config) {
     document.getElementById('selectAllImagesBtn').textContent = '☑️ Chọn tất cả';
     const _youthAllBtn = document.getElementById('selectAllYouthBtn');
     if (_youthAllBtn) { _youthAllBtn.style.display = 'none'; _youthAllBtn.textContent = '☑️ Chọn tất cả Youth'; }
+    const _autoEvalBtn = document.getElementById('autoEvaluateBtn');
+    if (_autoEvalBtn) _autoEvalBtn.style.display = 'none';
 
     // Clear previous results
     grid.innerHTML = '';
@@ -825,6 +893,8 @@ function updateGalleryItem(element, data, error) {
             selectAllBtn.textContent = allChecked ? '☐ Bỏ chọn tất cả' : '☑️ Chọn tất cả';
         }
         if (youthAllBtn) youthAllBtn.style.display = 'inline-block';
+        const autoEvalBtn = document.getElementById('autoEvaluateBtn');
+        if (autoEvalBtn) autoEvalBtn.style.display = 'inline-flex';
     }
 }
 
@@ -983,6 +1053,115 @@ function setupSelectAllYouthButton() {
         const allChecked = Array.from(youthCheckboxes).every(cb => cb.checked);
         youthCheckboxes.forEach(cb => { cb.checked = !allChecked; });
         youthBtn.textContent = allChecked ? '☑️ Chọn tất cả Youth' : '☐ Bỏ chọn Youth';
+    });
+}
+
+function setupAutoEvaluateButton() {
+    const btn = document.getElementById('autoEvaluateBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async () => {
+        const galleryItems = Array.from(document.querySelectorAll('.gallery-item'));
+        const completedItems = galleryItems.filter(item =>
+            item.querySelector('.gallery-checkbox[data-url]') !== null
+        );
+        if (completedItems.length === 0) {
+            alert('No images in gallery to evaluate.');
+            return;
+        }
+
+        // Xóa feedback cũ trước khi đọc prompt text
+        completedItems.forEach(item =>
+            item.querySelectorAll('.imerch-ai-feedback').forEach(el => el.remove())
+        );
+
+        const items = completedItems.map((item, index) => ({
+            index,
+            url: item.querySelector('.gallery-checkbox[data-url]').dataset.url
+        }));
+
+        // Lấy design context từ analysis
+        let designContext = '';
+        if (currentDesignAnalysis) {
+            // Schema mới: chỉ dùng section 1 (content)
+            designContext = (currentDesignAnalysis.content || '').slice(0, 3000);
+        } else if (currentAnalysisId) {
+            const stored = await new Promise(resolve =>
+                chrome.storage.local.get([currentAnalysisId], resolve)
+            );
+            const fullText = stored[currentAnalysisId]?.analysis || '';
+            if (fullText) {
+                // Thử parse JSON (schema mới nhưng currentDesignAnalysis chưa được set)
+                try {
+                    const stripped = fullText.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
+                    const parsed = JSON.parse(stripped);
+                    if (parsed && parsed.content) {
+                        designContext = parsed.content.slice(0, 3000);
+                    }
+                } catch (e) {
+                    // Format cũ: tìm điểm bắt đầu JSON array (hỗ trợ cả [{ và [\n{)
+                    const jsonArrayMatch = fullText.search(/\[\s*\n?\s*\{/);
+                    designContext = (jsonArrayMatch > 0 ? fullText.slice(0, jsonArrayMatch) : fullText)
+                        .trim().slice(0, 3000);
+                }
+            }
+        }
+
+        const btnText = btn.querySelector('.btn-text');
+        const btnSpinner = btn.querySelector('.btn-spinner');
+        btn.classList.add('loading');
+        btn.disabled = true;
+        if (btnSpinner) btnSpinner.style.display = 'inline-block';
+
+        try {
+            const response = await new Promise(resolve =>
+                chrome.runtime.sendMessage({ action: 'autoEvaluateDesigns', items, designContext }, resolve)
+            );
+            if (chrome.runtime.lastError) throw new Error(chrome.runtime.lastError.message);
+            if (!response?.success) throw new Error(response?.message || 'Unknown error from AI.');
+
+            const colorClassMap = { black: 'preview-black', grey: 'preview-grey', white: 'preview-white' };
+
+            response.results.forEach(({ index, background, hasError, feedback }) => {
+                const item = completedItems[index];
+                if (!item) return;
+
+                // Reset trạng thái cũ
+                item.style.border = '';
+                item.style.borderRadius = '';
+
+                // Áp dụng màu nền qua color-dot click
+                const targetClass = colorClassMap[background] || 'preview-black';
+                item.querySelectorAll('.color-dot').forEach(dot => {
+                    if (dot.dataset.class === targetClass) dot.click();
+                });
+
+                if (hasError && feedback) {
+                    // Lỗi: viền đỏ + feedback text
+                    item.style.border = '2px solid #ef4444';
+                    item.style.borderRadius = '8px';
+                    const promptEl = item.querySelector('.gallery-item-prompt');
+                    if (promptEl) {
+                        promptEl.innerHTML = '';
+                        const feedbackEl = document.createElement('div');
+                        feedbackEl.className = 'imerch-ai-feedback';
+                        feedbackEl.style.cssText = 'color:#ef4444;font-size:11px;line-height:1.5;';
+                        feedbackEl.textContent = '⚠️ ' + feedback;
+                        promptEl.appendChild(feedbackEl);
+                    }
+                }
+            });
+
+            if (btnText) btnText.textContent = '✅ Done';
+            setTimeout(() => { if (btnText) btnText.textContent = '🔍 Auto Check'; }, 2500);
+
+        } catch (err) {
+            alert(`Auto Check error: ${err.message}`);
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            if (btnSpinner) btnSpinner.style.display = 'none';
+        }
     });
 }
 
