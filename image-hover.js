@@ -184,7 +184,14 @@
     return false;
   }
 
+  // Kiểm tra điểm (x,y) có nằm trong rect (có padding) không
+  function inRect(rect, x, y, pad = 18) {
+    return x >= rect.left - pad && x <= rect.right  + pad
+        && y >= rect.top  - pad && y <= rect.bottom + pad;
+  }
+
   function attachListeners() {
+    // Hiện nút khi chuột vào ảnh
     document.addEventListener('mouseover', (e) => {
       if (!config.enabled || isBlacklisted()) return;
       const img = e.target.closest('img');
@@ -192,22 +199,29 @@
       showBtn(img);
     }, true);
 
-    document.addEventListener('mouseout', (e) => {
-      const img = e.target.closest('img');
-      if (!img || img !== currentImg) return;
+    // Dùng mousemove toàn trang để ẩn nút khi chuột rời khỏi vùng ảnh VÀ vùng nút
+    // (tránh bị overlay của Pinterest/Etsy làm bắn mouseout sớm)
+    document.addEventListener('mousemove', (e) => {
+      if (!currentImg) return;
       const btn = document.getElementById(BTN_ID);
-      const rt  = e.relatedTarget;
-      if (btn && (rt === btn || btn.contains(rt))) return;
-      scheduleHide(400);
+      if (!btn || btn.style.display === 'none') return;
+
+      const imgRect = currentImg.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const x = e.clientX, y = e.clientY;
+
+      if (!inRect(imgRect, x, y) && !inRect(btnRect, x, y)) {
+        scheduleHide(150);
+      } else {
+        clearTimeout(hideTimer);
+      }
     }, true);
 
     // Reload config khi settings thay đổi
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync') return;
       const hoverKeys = ['hoverEnabled', 'hoverMinWidth', 'hoverBtnPosition', 'hoverBlacklist'];
-      if (hoverKeys.some(k => k in changes)) {
-        loadConfig();
-      }
+      if (hoverKeys.some(k => k in changes)) loadConfig();
     });
   }
 
