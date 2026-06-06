@@ -23,6 +23,7 @@
     "identity"
   ],
   "host_permissions": [
+    "<all_urls>",
     "https://www.amazon.com/*",
     "https://m.media-amazon.com/*",
     "https://generativelanguage.googleapis.com/*",
@@ -46,6 +47,11 @@
       "js": [
         "content.js"
       ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["image-hover.js"],
       "run_at": "document_idle"
     }
   ],
