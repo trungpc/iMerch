@@ -530,13 +530,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         }));
 
-        const defaultCheckPrompt = `You are a t-shirt design QC expert. Analyze the image and perform 2 tasks:
+        const defaultCheckPrompt = `You are a t-shirt design QC checker. Analyze the image and perform 2 tasks:
 
-TASK 1 — SPELLING CHECK (only if text is visible on the design):
-- Read all text visible in the image
-- Compare only the words/spelling against the original text in the design description — ignore capitalization, font style, layout, and formatting
-- Flag only if a word is misspelled, missing, or an extra word was added (e.g. "Misspelled: 'Hapiness' → 'Happiness'" or "Missing word: 'only'")
-- If no text visible or no spelling issues: set hasError to false and feedback to ""
+TASK 1 — SPELLING CHECK:
+Read all text visible in the image. Compare the words letter-by-letter against the original text from the design description.
+Set hasError=true ONLY if a word is genuinely misspelled (wrong letters) or a word is missing or an extra word appears.
+DO NOT flag: uppercase vs lowercase, font style, font type, layout, illustrations, graphic elements, punctuation, quotation marks, or any visual style differences. ONLY flag actual spelling mistakes.
+If text matches (even if capitalization or font differs), set hasError=false and feedback="".
 
 TASK 2 — BACKGROUND SELECTION:
 - "black": bright/colorful design → dark background makes it pop
