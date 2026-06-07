@@ -869,7 +869,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }));
         const validImages = imageDataList.filter(p => p.base64);
 
-        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market.`;
+        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market. Do NOT use any elements that infringe on copyrights, trademarks, or intellectual property rights in the United States — including brand names, logos, characters, slogans, or any protected content.`;
 
         const outputSchema = `Return ONLY a JSON object (no markdown, no explanation):
 {
