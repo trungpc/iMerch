@@ -426,6 +426,114 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === "openIdeasPage") {
+    (async () => {
+      try {
+        const ideasId = 'ideas_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        await chrome.storage.local.set({
+          [ideasId]: {
+            products: request.products,
+            pageTitle: request.pageTitle || '',
+            analysis: null,
+            error: null,
+            ready: true
+          }
+        });
+        const ideasUrl = chrome.runtime.getURL(`ideas.html?id=${ideasId}`);
+        chrome.tabs.create({ url: ideasUrl });
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({ success: false, message: error.message });
+      }
+    })();
+    return true;
+  }
+
+  if (request.action === "generateIdeas") {
+    (async () => {
+      try {
+        const { ideasId, products, customPrompt } = request;
+        const { analysisProvider, geminiKey, geminiModel, openaiKey, openaiModel } =
+          await new Promise(resolve => chrome.storage.sync.get(
+            ["analysisProvider", "geminiKey", "geminiModel", "openaiKey", "openaiModel"], resolve
+          ));
+        const provider = analysisProvider || "gemini";
+
+        // Fetch thumbnails as base64
+        const imageDataList = await Promise.all(products.map(async p => {
+          try {
+            const res = await fetch(p.thumbnail);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const blob = await res.blob();
+            const reader = new FileReader();
+            const dataUrl = await new Promise((ok, err) => { reader.onloadend = () => ok(reader.result); reader.onerror = err; reader.readAsDataURL(blob); });
+            return { ...p, base64: dataUrl.split(',')[1], mimeType: blob.type || 'image/jpeg' };
+          } catch (e) {
+            return { ...p, base64: null };
+          }
+        }));
+        const validImages = imageDataList.filter(p => p.base64);
+
+        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products along with their titles and BSR ranks. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market.`;
+
+        const contextLines = products.map((p, i) => `${i + 1}. "${p.title}" | Rank: #${p.rank.toLocaleString()}`).join('\n');
+
+        const outputSchema = `Return ONLY a JSON object:
+{
+  "niche_analysis": "2-3 sentence summary of the visual style, theme, and patterns you see across these designs",
+  "ideas": [
+    {
+      "title": "Short concept title",
+      "description": "Design concept description",
+      "audience": "Target audience",
+      "style": "Visual style",
+      "prompt": "Detailed image generation prompt for this design"
+    }
+  ]
+}`;
+
+        let analysisText = '';
+        if (provider === "openai") {
+          if (!openaiKey) throw new Error("OpenAI API key not configured.");
+          const model = openaiModel || "gpt-4o-mini";
+          const contentParts = [
+            { type: "input_text", text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
+            ...validImages.map(p => ({ type: "input_image", image_url: `data:${p.mimeType};base64,${p.base64}`, detail: "low" }))
+          ];
+          const res = await fetch("https://api.openai.com/v1/responses", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model, input: [{ role: "user", content: contentParts }] })
+          });
+          const txt = await res.text();
+          if (!res.ok) throw new Error(`OpenAI: ${res.status}`);
+          analysisText = JSON.parse(txt)?.output?.find(o => o.type === "message")?.content?.find(c => c.type === "output_text")?.text || '';
+        } else {
+          if (!geminiKey) throw new Error("Gemini API key not configured.");
+          const model = geminiModel || "gemini-2.0-flash";
+          const parts = [
+            { text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
+            ...validImages.map(p => ({ inline_data: { mime_type: p.mimeType, data: p.base64 } }))
+          ];
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts }] })
+          });
+          const txt = await res.text();
+          if (!res.ok) throw new Error(`Gemini: ${res.status}`);
+          analysisText = JSON.parse(txt)?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        }
+
+        await chrome.storage.local.set({ [ideasId]: { products, analysis: analysisText, error: null, ready: true } });
+        sendResponse({ success: true, analysis: analysisText });
+      } catch (error) {
+        sendResponse({ success: false, message: error.message });
+      }
+    })();
+    return true;
+  }
+
   if (request.action === "regenerateAnalysis") {
     (async () => {
       try {

@@ -644,6 +644,40 @@ function resetSort() {
   updateSortButtonState();
 }
 
+function openIdeasPage() {
+  const slot = document.querySelector('.s-main-slot');
+  if (!slot) return;
+
+  // Lấy tất cả sản phẩm đã có rank, sort theo rank tăng dần, giới hạn 12
+  const items = Array.from(slot.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]'))
+    .sort((a, b) => (parseInt(a.dataset.imerchRank) || 999999999) - (parseInt(b.dataset.imerchRank) || 999999999))
+    .slice(0, 12);
+
+  if (items.length === 0) {
+    alert('Chưa có dữ liệu rank. Hãy đợi extension load xong hoặc bấm +1/+3 để load thêm.');
+    return;
+  }
+
+  const products = items.map(el => {
+    const img = el.querySelector('img[src*="amazon.com"], img[src*="media-amazon"]');
+    const thumbnail = img ? img.src : '';
+    return {
+      asin: el.dataset.asin || '',
+      rank: parseInt(el.dataset.imerchRank) || 0,
+      date: el.dataset.imerchDate || '',
+      title: el.dataset.imerchTitle || el.querySelector('h2')?.textContent?.trim() || '',
+      thumbnail,
+    };
+  }).filter(p => p.thumbnail);
+
+  if (products.length === 0) {
+    alert('Không tìm thấy thumbnail sản phẩm.');
+    return;
+  }
+
+  chrome.runtime.sendMessage({ action: 'openIdeasPage', products, pageTitle: document.title });
+}
+
 function updateSortButtonState() {
   const rankBtn = document.getElementById('imerch-btn-rank');
   const dateBtn = document.getElementById('imerch-btn-date');
@@ -734,6 +768,7 @@ function injectSortBar() {
   bar.id = 'imerch-sort-bar';
   bar.style.cssText = 'display:flex; align-items:center; gap:3px; white-space:nowrap;';
   bar.innerHTML = `
+    <button id="imerch-btn-ideas" style="${btn}" title="Generate design ideas from top products">💡 Ideas</button>
     <button id="imerch-btn-rank" style="${btn}" title="Sort by BSR (low → high)">📊 Rank</button>
     <button id="imerch-btn-date" style="${btn}" title="Sort by Date (newest first)">📅 Date</button>
     <button id="imerch-btn-reset" style="${btn}" title="Reset to Amazon order">↺</button>
@@ -759,6 +794,7 @@ function injectSortBar() {
     insertTarget.insertBefore(bar, sortSelect.closest('form'));
   }
 
+  document.getElementById('imerch-btn-ideas').addEventListener('click', openIdeasPage);
   document.getElementById('imerch-btn-rank').addEventListener('click', () => sortProducts('rank'));
   document.getElementById('imerch-btn-date').addEventListener('click', () => sortProducts('date'));
   document.getElementById('imerch-btn-reset').addEventListener('click', resetSort);
