@@ -123,6 +123,20 @@
         .prompt-area textarea:focus { border-color: #a78bfa; }
         .prompt-area textarea::placeholder { color: #6b7280; }
 
+        .reset-prompt-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.45);
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .reset-prompt-btn:hover { border-color: rgba(167,139,250,0.4); color: #a78bfa; }
+
         .ideas-generate-btn {
             padding: 10px 20px;
             background: linear-gradient(135deg, #667eea, #764ba2);
@@ -716,10 +730,11 @@
         <div class="card">
             <div class="card-header">
                 <h2>🤖 AI Prompt</h2>
+                <button class="reset-prompt-btn" id="resetPromptBtn" title="Khôi phục prompt mặc định">↺ Reset</button>
             </div>
             <div class="card-body">
                 <div class="prompt-area">
-                    <textarea id="customPrompt" placeholder="Tuỳ chỉnh yêu cầu cho AI (để trống dùng mặc định)&#10;Ví dụ: Tập trung vào phong cách vintage, audience là phụ nữ 30-50 tuổi..."></textarea>
+                    <textarea id="customPrompt" rows="4"></textarea>
                     <button class="ideas-generate-btn" id="generateIdeasBtn">
                         <span class="btn-text">✨ Generate Ideas</span>
                         <span class="btn-spinner"></span>

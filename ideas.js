@@ -2,6 +2,8 @@ let products = [];
 let excludedIndexes = new Set();
 let extractedPrompts = []; // { audience, styleName, prompt }
 
+const DEFAULT_SYSTEM_PROMPT = `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market.`;
+
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(location.search);
     const ideasId = params.get('id');
@@ -15,6 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('thumbCount').textContent = `${products.length} sản phẩm`;
 
     renderThumbnails();
+
+    // Pre-fill system prompt textarea
+    document.getElementById('customPrompt').value = DEFAULT_SYSTEM_PROMPT;
+
+    // Reset prompt button
+    document.getElementById('resetPromptBtn').addEventListener('click', () => {
+        document.getElementById('customPrompt').value = DEFAULT_SYSTEM_PROMPT;
+    });
 
     document.getElementById('generateIdeasBtn').addEventListener('click', generateIdeas);
     setupImageSettingsPanel();
