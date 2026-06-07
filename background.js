@@ -869,9 +869,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }));
         const validImages = imageDataList.filter(p => p.base64);
 
-        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products along with their titles and BSR ranks. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market.`;
-
-        const contextLines = products.map((p, i) => `${i + 1}. "${p.title}" | Rank: #${p.rank.toLocaleString()}`).join('\n');
+        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist. I will show you thumbnails of top-selling t-shirt products. Analyze their visual styles, themes, color palettes, typography, and niches. Then generate 5 original new design ideas that could succeed in this market.`;
 
         const outputSchema = `Return ONLY a JSON object (no markdown, no explanation):
 {
@@ -892,7 +890,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (!openaiKey) throw new Error("OpenAI API key not configured.");
           const model = openaiModel || "gpt-4.1";
           const contentParts = [
-            { type: "input_text", text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
+            { type: "input_text", text: `${systemPrompt}\n\n${outputSchema}` },
             ...validImages.map(p => ({ type: "input_image", image_url: `data:${p.mimeType};base64,${p.base64}`, detail: "low" }))
           ];
           const res = await fetch("https://api.openai.com/v1/responses", {
@@ -907,7 +905,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (!geminiKey) throw new Error("Gemini API key not configured.");
           const model = geminiModel || "gemini-2.5-flash";
           const parts = [
-            { text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
+            { text: `${systemPrompt}\n\n${outputSchema}` },
             ...validImages.map(p => ({ inline_data: { mime_type: p.mimeType, data: p.base64 } }))
           ];
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
