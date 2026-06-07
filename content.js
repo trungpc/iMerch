@@ -676,15 +676,8 @@ function openIdeasPage() {
     return;
   }
 
-  // Style filters — loại sản phẩm không phải standard t-shirt
-  const styleFiltersExclude = [
-    'Premium T-Shirt', 'V-Neck T-Shirt', 'Tank Top',
-    'Long Sleeve T-Shirt', 'Raglan Baseball Tee',
-    'Sweatshirt', 'Pullover Hoodie', 'Zip Hoodie'
-  ];
-
   chrome.storage.sync.get(['ideasTrademarks'], result => {
-    const trademarkList = (result.ideasTrademarks || '')
+    const keywordList = (result.ideasTrademarks || '')
       .split('\n').map(s => s.trim()).filter(Boolean);
 
     const products = [];
@@ -702,29 +695,20 @@ function openIdeasPage() {
 
       if (!thumbnail) continue;
 
-      // Lọc loại sản phẩm không phải standard t-shirt
-      const combined = `${brand} ${title} ${bullet1} ${bullet2}`;
-      const excludedStyle = styleFiltersExclude.some(s =>
-        new RegExp(s, 'i').test(combined)
-      );
-      if (excludedStyle) { skipped.push(asin + ' (style)'); continue; }
-
-      // Lọc trademark
-      if (trademarkList.length > 0) {
-        const hasTrademark = trademarkList.some(tm =>
-          new RegExp(tm, 'i').test(combined)
-        );
-        if (hasTrademark) { skipped.push(asin + ' (trademark)'); continue; }
+      if (keywordList.length > 0) {
+        const combined = `${brand} ${title} ${bullet1} ${bullet2}`;
+        const matched = keywordList.some(kw => new RegExp(kw, 'i').test(combined));
+        if (matched) { skipped.push(asin); continue; }
       }
 
       products.push({ asin, rank, title, brand, bullet1, bullet2, thumbnail, date: el.dataset.imerchDate || '' });
       if (products.length >= 12) break;
     }
 
-    if (skipped.length > 0) logger.log(`Ideas filter: skipped ${skipped.length} products — ${skipped.join(', ')}`);
+    if (skipped.length > 0) logger.log(`Ideas filter: skipped ${skipped.length} — ${skipped.join(', ')}`);
 
     if (products.length === 0) {
-      alert('Không có sản phẩm nào hợp lệ sau khi lọc (style/trademark).');
+      alert('Không có sản phẩm nào hợp lệ sau khi lọc keyword.');
       return;
     }
 
