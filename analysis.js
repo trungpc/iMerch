@@ -1148,9 +1148,11 @@ function setupAutoEvaluateButton() {
                 });
 
                 if (hasError && feedback) {
-                    // Lỗi: viền đỏ + feedback text
+                    // Lỗi: viền đỏ + feedback text + bỏ check
                     item.style.border = '2px solid #ef4444';
                     item.style.borderRadius = '8px';
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    if (cb && cb.checked) cb.click();
                     const promptEl = item.querySelector('.gallery-item-prompt');
                     if (promptEl) {
                         promptEl.innerHTML = '';
