@@ -667,18 +667,18 @@ function openIdeasPage() {
   const slot = document.querySelector('.s-main-slot');
   if (!slot) return;
 
-  // Lấy tất cả sản phẩm đã có rank, sort theo rank tăng dần
-  const items = Array.from(slot.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]'))
-    .sort((a, b) => (parseInt(a.dataset.imerchRank) || 999999999) - (parseInt(b.dataset.imerchRank) || 999999999));
+  // Lấy theo thứ tự hiển thị thực tế trên trang (DOM order)
+  const items = Array.from(slot.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]'));
 
   if (items.length === 0) {
     alert('Chưa có dữ liệu rank. Hãy đợi extension load xong hoặc bấm +1/+3 để load thêm.');
     return;
   }
 
-  chrome.storage.sync.get(['ideasTrademarks'], result => {
+  chrome.storage.sync.get(['ideasTrademarks', 'ideasMaxProducts'], result => {
     const keywordList = (result.ideasTrademarks || '')
       .split('\n').map(s => s.trim()).filter(Boolean);
+    const maxProducts = parseInt(result.ideasMaxProducts) || 12;
 
     const products = [];
     const skipped = [];
@@ -702,7 +702,7 @@ function openIdeasPage() {
       }
 
       products.push({ asin, rank, title, brand, bullet1, bullet2, thumbnail, date: el.dataset.imerchDate || '' });
-      if (products.length >= 12) break;
+      if (products.length >= maxProducts) break;
     }
 
     if (skipped.length > 0) logger.log(`Ideas filter: skipped ${skipped.length} — ${skipped.join(', ')}`);

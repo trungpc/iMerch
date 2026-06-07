@@ -62,7 +62,7 @@ const KEYS = [
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
-  "ideasTrademarks"
+  "ideasTrademarks", "ideasMaxProducts"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -524,6 +524,7 @@ motley crue
 gun & rose
 harley davidson
 merry christmas from heaven`;
+  document.getElementById("ideasMaxProducts").value = result.ideasMaxProducts ?? 12;
   const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
   document.getElementById("ideasTrademarks").value = savedTrademarks;
   // Tự động lưu default vào storage nếu chưa có
@@ -688,6 +689,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     hoverBtnPosition: getVal("hoverBtnPosition") || "top-right",
     hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
     ideasTrademarks: document.getElementById("ideasTrademarks")?.value.trim() || "",
+    ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
   };
 
   chrome.storage.sync.set(settings, () => {
