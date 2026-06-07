@@ -890,7 +890,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         let analysisText = '';
         if (provider === "openai") {
           if (!openaiKey) throw new Error("OpenAI API key not configured.");
-          const model = openaiModel || "gpt-4o-mini";
+          const model = openaiModel || "gpt-4.1";
           const contentParts = [
             { type: "input_text", text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
             ...validImages.map(p => ({ type: "input_image", image_url: `data:${p.mimeType};base64,${p.base64}`, detail: "low" }))
@@ -905,7 +905,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           analysisText = JSON.parse(txt)?.output?.find(o => o.type === "message")?.content?.find(c => c.type === "output_text")?.text || '';
         } else {
           if (!geminiKey) throw new Error("Gemini API key not configured.");
-          const model = geminiModel || "gemini-2.0-flash";
+          const model = geminiModel || "gemini-2.5-flash";
           const parts = [
             { text: `${systemPrompt}\n\nTop selling products:\n${contextLines}\n\n${outputSchema}` },
             ...validImages.map(p => ({ inline_data: { mime_type: p.mimeType, data: p.base64 } }))
