@@ -183,54 +183,64 @@
         .ideas-grid {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .idea-card {
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 10px;
-            padding: 12px 14px;
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 12px;
+            overflow: hidden;
             transition: border-color 0.2s;
         }
         .idea-card:hover { border-color: rgba(167,139,250,0.3); }
+
+        /* Dòng 1: số | title | tags | copy btn */
+        .idea-row-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
         .idea-num {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #a78bfa;
-            min-width: 20px;
-            text-align: center;
+            min-width: 18px;
             flex-shrink: 0;
         }
-        .idea-card .idea-title {
-            min-width: 160px;
-            max-width: 180px;
+        .idea-title {
             font-size: 13px;
             font-weight: 600;
             color: #fff;
             flex-shrink: 0;
+            margin-right: 4px;
         }
-        .idea-card .idea-meta {
+        .idea-meta {
             display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex-shrink: 0;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex: 1;
         }
-        .idea-card .idea-description {
-            flex: 0 0 220px;
+
+        /* Dòng 2: description */
+        .idea-row-desc {
+            padding: 7px 14px;
             font-size: 12px;
             color: #9ca3af;
             line-height: 1.5;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .idea-card .idea-prompt {
+
+        /* Dòng 3: prompt */
+        .idea-row-prompt {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 7px 14px;
+        }
+        .idea-prompt-text {
             flex: 1;
-            min-width: 0;
-            background: rgba(0,0,0,0.2);
-            border-radius: 6px;
-            padding: 8px 10px;
             font-size: 11px;
             color: #c4b5fd;
             line-height: 1.5;

@@ -139,15 +139,19 @@ function renderIdeas(text) {
     html += `<div class="ideas-grid">`;
     data.ideas.forEach((idea, i) => {
         html += `<div class="idea-card">
-            <div class="idea-num">${i + 1}</div>
-            <div class="idea-title">${escHtml(idea.title || '')}</div>
-            <div class="idea-meta">
-                ${idea.audience ? `<span class="idea-tag tag-audience">👥 ${escHtml(idea.audience)}</span>` : ''}
-                ${idea.style ? `<span class="idea-tag tag-style">🎨 ${escHtml(idea.style)}</span>` : ''}
+            <div class="idea-row-header">
+                <span class="idea-num">${i + 1}</span>
+                <span class="idea-title">${escHtml(idea.title || '')}</span>
+                <div class="idea-meta">
+                    ${idea.audience ? `<span class="idea-tag tag-audience">👥 ${escHtml(idea.audience)}</span>` : ''}
+                    ${idea.style ? `<span class="idea-tag tag-style">🎨 ${escHtml(idea.style)}</span>` : ''}
+                </div>
             </div>
-            ${idea.description ? `<div class="idea-description">${escHtml(idea.description)}</div>` : ''}
-            ${idea.prompt ? `<div class="idea-prompt">${escHtml(idea.prompt)}</div>` : ''}
-            ${idea.prompt ? `<button class="copy-prompt-btn" data-prompt="${escAttr(idea.prompt)}" style="flex-shrink:0;">📋</button>` : ''}
+            ${idea.description ? `<div class="idea-row-desc">${escHtml(idea.description)}</div>` : ''}
+            ${idea.prompt ? `<div class="idea-row-prompt">
+                <div class="idea-prompt-text">${escHtml(idea.prompt)}</div>
+                <button class="copy-prompt-btn" data-prompt="${escAttr(idea.prompt)}" style="flex-shrink:0;">📋 Copy</button>
+            </div>` : ''}
         </div>`;
     });
     html += '</div>';
