@@ -873,16 +873,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         const contextLines = products.map((p, i) => `${i + 1}. "${p.title}" | Rank: #${p.rank.toLocaleString()}`).join('\n');
 
-        const outputSchema = `Return ONLY a JSON object:
+        const outputSchema = `Return ONLY a JSON object (no markdown, no explanation):
 {
   "niche_analysis": "2-3 sentence summary of the visual style, theme, and patterns you see across these designs",
   "ideas": [
     {
       "title": "Short concept title",
-      "description": "Design concept description",
-      "audience": "Target audience",
-      "style": "Visual style",
-      "prompt": "Detailed image generation prompt for this design"
+      "description": "Brief description of the design concept and why it would sell",
+      "audience": "Target audience (e.g. Men 25-40, Dog moms, Nurses)",
+      "style": "Visual style (e.g. Vintage, Minimalist, Watercolor)",
+      "prompt": "A detailed t-shirt design prompt for Ideogram. Must include: (1) layout description (simple, no small chest pocket style), (2) any text placed in \\"double quotes\\", (3) key visual elements and emotional focal points, (4) specific art style, color palette, and mood. Do NOT reference any trademarked brands, characters, or IPs."
     }
   ]
 }`;
