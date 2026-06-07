@@ -419,6 +419,18 @@
     </div>
   </div>
 
+  <!-- Ideas Filter -->
+  <div class="card">
+    <div class="card-header">💡 Ideas Generator — Trademark Filter</div>
+    <div class="card-body">
+      <div class="field">
+        <label>Trademark Keywords (mỗi dòng 1 từ/regex, không phân biệt hoa thường)</label>
+        <textarea id="ideasTrademarks" placeholder="Disney&#10;Marvel&#10;NFL&#10;NBA&#10;Harry Potter" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
+        <small style="color:#888;">Sản phẩm có brand/title/bullet chứa bất kỳ keyword nào sẽ bị loại trước khi gửi thumbnail lên AI.</small>
+      </div>
+    </div>
+  </div>
+
   <div style="display:flex; align-items:center; gap:14px;">
     <button class="save-btn" id="saveBtn">💾 Save Settings</button>
     <div class="status" id="status"></div>

@@ -301,6 +301,8 @@ function extractProductInfo(html, knownAsin) {
 
   const imageMatch = html.match(/"hiRes":"(https:\/\/m\.media-amazon\.com\/images\/I\/([^"}]+))"/);
   const titleMatch = html.match(/<span id="productTitle"[^>]*>([\s\S]*?)<\/span>/);
+  const brandMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/);
+  const bulletMatches = [...html.matchAll(/<li[^>]*>\s*<span[^>]*class="[^"]*a-list-item[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/li>/g)];
 
   let sku = "";
   if (imageMatch) {
@@ -309,12 +311,25 @@ function extractProductInfo(html, knownAsin) {
     sku = imageParts.length > 1 ? imageParts[imageParts.length - 1] : "";
   }
 
+  let brand = "";
+  if (brandMatch) {
+    brand = brandMatch[1].replace(/<[^>]+>/g, '').replace(/Visit the|Store|Brand:/gi, '').trim();
+  }
+
+  const bullets = bulletMatches
+    .map(m => m[1].replace(/<[^>]+>/g, '').trim())
+    .filter(b => b.length > 10 && b.length < 300)
+    .slice(0, 2);
+
   return {
     asin: knownAsin || (asinMatch ? asinMatch[1] : "N/A"),
     rank: rankMatch ? rankMatch[1] : "N/A",
     date: dateMatch ? dateMatch[1].trim() : "N/A",
     sku: sku,
-    title: titleMatch ? decodeHtmlEntities(titleMatch[1].trim()) : "N/A"
+    title: titleMatch ? decodeHtmlEntities(titleMatch[1].trim()) : "N/A",
+    brand: brand,
+    bullet1: bullets[0] || "",
+    bullet2: bullets[1] || "",
   };
 }
 
@@ -607,6 +622,10 @@ function tagProductForSort(product, data) {
   const dateTs  = data.date !== "N/A" ? (new Date(data.date).getTime() || 0) : 0;
   product.dataset.imerchRank = rankNum;
   product.dataset.imerchDate = dateTs;
+  if (data.title) product.dataset.imerchTitle = data.title;
+  if (data.brand) product.dataset.imerchBrand = data.brand;
+  if (data.bullet1) product.dataset.imerchBullet1 = data.bullet1;
+  if (data.bullet2) product.dataset.imerchBullet2 = data.bullet2;
 }
 
 function saveOriginalOrder() {
@@ -648,34 +667,69 @@ function openIdeasPage() {
   const slot = document.querySelector('.s-main-slot');
   if (!slot) return;
 
-  // Lấy tất cả sản phẩm đã có rank, sort theo rank tăng dần, giới hạn 12
+  // Lấy tất cả sản phẩm đã có rank, sort theo rank tăng dần
   const items = Array.from(slot.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]'))
-    .sort((a, b) => (parseInt(a.dataset.imerchRank) || 999999999) - (parseInt(b.dataset.imerchRank) || 999999999))
-    .slice(0, 12);
+    .sort((a, b) => (parseInt(a.dataset.imerchRank) || 999999999) - (parseInt(b.dataset.imerchRank) || 999999999));
 
   if (items.length === 0) {
     alert('Chưa có dữ liệu rank. Hãy đợi extension load xong hoặc bấm +1/+3 để load thêm.');
     return;
   }
 
-  const products = items.map(el => {
-    const img = el.querySelector('img[src*="amazon.com"], img[src*="media-amazon"]');
-    const thumbnail = img ? img.src : '';
-    return {
-      asin: el.dataset.asin || '',
-      rank: parseInt(el.dataset.imerchRank) || 0,
-      date: el.dataset.imerchDate || '',
-      title: el.dataset.imerchTitle || el.querySelector('h2')?.textContent?.trim() || '',
-      thumbnail,
-    };
-  }).filter(p => p.thumbnail);
+  // Style filters — loại sản phẩm không phải standard t-shirt
+  const styleFiltersExclude = [
+    'Premium T-Shirt', 'V-Neck T-Shirt', 'Tank Top',
+    'Long Sleeve T-Shirt', 'Raglan Baseball Tee',
+    'Sweatshirt', 'Pullover Hoodie', 'Zip Hoodie'
+  ];
 
-  if (products.length === 0) {
-    alert('Không tìm thấy thumbnail sản phẩm.');
-    return;
-  }
+  chrome.storage.sync.get(['ideasTrademarks'], result => {
+    const trademarkList = (result.ideasTrademarks || '')
+      .split('\n').map(s => s.trim()).filter(Boolean);
 
-  chrome.runtime.sendMessage({ action: 'openIdeasPage', products, pageTitle: document.title });
+    const products = [];
+    const skipped = [];
+
+    for (const el of items) {
+      const asin    = el.dataset.asin || '';
+      const rank    = parseInt(el.dataset.imerchRank) || 0;
+      const title   = el.dataset.imerchTitle || el.querySelector('h2')?.textContent?.trim() || '';
+      const brand   = el.dataset.imerchBrand || '';
+      const bullet1 = el.dataset.imerchBullet1 || '';
+      const bullet2 = el.dataset.imerchBullet2 || '';
+      const img     = el.querySelector('img[src*="amazon.com"], img[src*="media-amazon"]');
+      const thumbnail = img ? img.src : '';
+
+      if (!thumbnail) continue;
+
+      // Lọc loại sản phẩm không phải standard t-shirt
+      const combined = `${brand} ${title} ${bullet1} ${bullet2}`;
+      const excludedStyle = styleFiltersExclude.some(s =>
+        new RegExp(s, 'i').test(combined)
+      );
+      if (excludedStyle) { skipped.push(asin + ' (style)'); continue; }
+
+      // Lọc trademark
+      if (trademarkList.length > 0) {
+        const hasTrademark = trademarkList.some(tm =>
+          new RegExp(tm, 'i').test(combined)
+        );
+        if (hasTrademark) { skipped.push(asin + ' (trademark)'); continue; }
+      }
+
+      products.push({ asin, rank, title, brand, bullet1, bullet2, thumbnail, date: el.dataset.imerchDate || '' });
+      if (products.length >= 12) break;
+    }
+
+    if (skipped.length > 0) logger.log(`Ideas filter: skipped ${skipped.length} products — ${skipped.join(', ')}`);
+
+    if (products.length === 0) {
+      alert('Không có sản phẩm nào hợp lệ sau khi lọc (style/trademark).');
+      return;
+    }
+
+    chrome.runtime.sendMessage({ action: 'openIdeasPage', products, pageTitle: document.title });
+  });
 }
 
 function updateSortButtonState() {

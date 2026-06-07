@@ -61,7 +61,8 @@ const KEYS = [
   "sheetId", "sheetName", "googleClientId", "driveFolderId",
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
-  "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist"
+  "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
+  "ideasTrademarks"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -138,6 +139,7 @@ chrome.storage.sync.get(KEYS, (result) => {
   document.getElementById("hoverMinWidth").value = result.hoverMinWidth ?? 300;
   setVal("hoverBtnPosition", result.hoverBtnPosition || "top-right");
   document.getElementById("hoverBlacklist").value = result.hoverBlacklist || "";
+  document.getElementById("ideasTrademarks").value = result.ideasTrademarks || "";
 });
 
 // Fetch models from API
@@ -295,6 +297,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     hoverMinWidth: parseInt(document.getElementById("hoverMinWidth")?.value) || 300,
     hoverBtnPosition: getVal("hoverBtnPosition") || "top-right",
     hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
+    ideasTrademarks: document.getElementById("ideasTrademarks")?.value.trim() || "",
   };
 
   chrome.storage.sync.set(settings, () => {
