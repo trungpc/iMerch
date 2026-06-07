@@ -273,10 +273,16 @@ function showAnalysis(text) {
 
     // Thử parse JSON schema mới trước
     let parsed = null;
-    try {
-        const raw = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
-        parsed = JSON.parse(raw);
-    } catch (e) {}
+    const tryParseJson = (s) => { try { return JSON.parse(s.trim()); } catch (e) { return null; } };
+    // 1. Strip code fence
+    const stripped = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
+    parsed = tryParseJson(stripped);
+    // 2. Fallback: tìm JSON object {...} bất kỳ trong text (AI đôi khi thêm text trước/sau)
+    if (!parsed) {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start !== -1 && end > start) parsed = tryParseJson(text.slice(start, end + 1));
+    }
 
     if (parsed && parsed.content && Array.isArray(parsed.prompts)) {
         const flatStr = v => {
@@ -371,7 +377,12 @@ function tryExtractPrompts(text) {
 
     // 0. Schema mới: JSON object với field "prompts" (lowercase)
     const stripped0 = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
-    const fullParsed = tryParse(stripped0);
+    let fullParsed = tryParse(stripped0);
+    // Fallback: tìm JSON object {...} bất kỳ trong text
+    if (!fullParsed) {
+        const s = text.indexOf('{'), e = text.lastIndexOf('}');
+        if (s !== -1 && e > s) fullParsed = tryParse(text.slice(s, e + 1));
+    }
     if (fullParsed && fullParsed.content && Array.isArray(fullParsed.prompts)) {
         jsonData = fullParsed.prompts;
     }
