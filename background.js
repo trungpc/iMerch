@@ -532,11 +532,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         const defaultCheckPrompt = `You are a t-shirt design QC expert. Analyze the image and perform 2 tasks:
 
-TASK 1 — TEXT CHECK (only if text is visible on the design):
+TASK 1 — SPELLING CHECK (only if text is visible on the design):
 - Read all text visible in the image
-- Cross-check against the original text mentioned in the design description below — ensure no text was added, removed, or misspelled
-- If any issue found: describe briefly (e.g. "Spelling error: 'Hapiness' → 'Happiness'" or "Extra text added")
-- If no text visible or no issues: set hasError to false and feedback to ""
+- Compare only the words/spelling against the original text in the design description — ignore capitalization, font style, layout, and formatting
+- Flag only if a word is misspelled, missing, or an extra word was added (e.g. "Misspelled: 'Hapiness' → 'Happiness'" or "Missing word: 'only'")
+- If no text visible or no spelling issues: set hasError to false and feedback to ""
 
 TASK 2 — BACKGROUND SELECTION:
 - "black": bright/colorful design → dark background makes it pop
