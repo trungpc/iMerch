@@ -1,6 +1,401 @@
 // Debug flag - set to false for production
 const DEBUG = false;
 
+// Khởi tạo default settings khi install hoặc update
+const DEFAULT_IDEAS_TRADEMARKS = `Official
+Officially Licensed
+Minions
+SUPER MARIO
+Peanuts
+Disney
+Star Wars
+Marvel
+Harry Potter
+Coca-Cola
+Dr. Seuss
+Caterpillar
+Legendary Whitetails
+Ariana Grande
+Michael Jackson
+XXXTentacion
+Taylor Swift
+Juice WRLD
+Tupac Shakur
+Lady Gaga
+Selena Gomez
+Beyonce Knowles
+Jennifer Lopez
+Dior
+Britney Spears
+AC/DC
+Aerosmith
+Aretha Franklin
+Backstreet Boys
+The Beach Boys
+The Beatles
+Billie Eilish
+Billy Idol
+The Black Crowes
+Black Sabbath
+Blackpink
+Bob Marley
+Bon Jovi
+BTS
+Cypress Hill
+David Bowie
+Def Leppard
+Descendents
+Doja Cat
+Dolly Parton
+Eagles Of Death Metal
+Ed Sheeran
+Elton John
+Elvis Presley
+Fall Out Boy
+Foo Fighters
+Gloria Gaynor
+Gorillaz
+The Grateful Dead
+Green Day
+Gucci Mane
+Guns N'Roses
+Ice Cube
+Imagine Dragons
+Iron Maiden
+J Balvin
+Jane's Addiction
+Janis Joplin
+Jimi Hendrix
+John Lennon
+Johnny Cash
+JoJo Siwa
+Journey
+Justin Bieber
+Kacey Musgraves
+Kane Brown
+Katy Perry
+Keith Urban
+Led Zeppelin
+Lil Nas X
+Lionel Richie
+Luke Bryan
+Luke Combs
+Lynyrd Skynyrd
+Maren Morris
+Marshmello
+Mary J. Blige
+Metallica
+Miles Davis
+The Misfits
+Mötley Crüe
+Nirvana
+Old Dominion
+Panic! At The Disco
+Pantera
+Pink Floyd
+Poison
+Public Enemy
+Rise Against
+The Rolling Stones
+Run DMC
+Slipknot
+Steve Miller Band
+Tim McGraw
+Tupac
+Wale
+Walker Hayes
+Weezer
+Wham!
+Whitney Houston
+The Who
+Zac Brown Band
+Jeff Dunham
+Nike
+Adidas
+Unknow
+Ku Champs
+Feisty and Fabulous
+Salty Vibes
+Dallas Cowboys
+Harry Styles
+The Strokes
+Fox News
+BOSS BABY
+Spice Girls
+Cards Against Humanity
+Jeep
+CoComelon
+Peppa Pig
+SALT LIFE
+Levi's
+PAW PATROL
+Stevie Nicks
+Arkansas Razorbacks
+Dragon Ball
+SPONGEBOB SQUAREPANTS
+Tipsy Elves
+BATMAN
+Every Child Matter
+System of a Down
+SNOOPY
+Shopkins
+Dragonforce
+STARBUCKS
+A NIGHTMARE ON ELM STREET
+A Day To Remember
+Olivia Rodrigo
+Resident Evil
+Battlestar Galactica
+The Witcher
+LEGO
+Hallmark
+Seattle Seahawks
+BEETLEJUICE
+TOY STORY
+ABC LEARNING APPAREL
+ANIMAL ALPHABET
+Rose apothecary
+Schitt's Creek
+naruto
+attack on titan
+Travis Scott
+naturo
+Titos
+THE MANDALORIAN
+BritNey
+StephCurry
+Just Hit It
+Just Did It
+Patrol Paw Patrol
+Britney Spears Britney
+Cottagecore Aesthetic Frog Playing Banjo On Mushroom
+Levi Ackerman
+Friday The 13th
+Ninja Turtle
+Milf Man I Love Frogs
+Salty Lil'
+Minion
+Spongebob
+WONDER WOMAN
+Butterfly
+Every Child Matter Orange
+Spon-Ge-Bob
+roblox
+Residents Evil
+hot wheels
+hot-wheel
+Beetle
+Blippi
+Soundgarden
+Mine Crafts
+Dwight Schrute
+jojo siwas
+Fight Like A Girl
+Unicorn
+Uni-Corn
+big foot
+Child Matters Orange
+jurassic park
+Morgan Wallen
+San Francisco Giants
+Goodfellas
+bob ross
+the sopranos
+Totoro
+Mob Psycho
+Yaiba
+DC Comics
+Harley Quinn
+Skyrim
+Among Us
+haikyuu
+Hunter x hunter
+Gucci
+gozzila
+Kobe Bryant
+baby shark
+Chanel
+Prada
+Louis Vuitton
+Puma
+doctor who
+fast and furious
+back to the future
+Emoji
+downton abbey
+lion king
+deadpool
+the big bang theory
+hello kitty
+avengers
+one peice
+Ryan
+Robloxs
+RYAN'S WORLD
+Mario
+Super
+Superhero
+Spiderman
+Minnie
+Mickey
+Sonic
+Ryan World
+Dumbest
+Singer
+Marty McFly
+Thrasher
+Sword Art Online
+black veil brides
+Horcrux
+Oromo
+Voldemort
+SLYTHERIN
+The Lemmings
+Grizzy
+Spartan Zed
+talisman
+The Cat Returns
+My Neighbors The Yamadas
+Marnie
+When Marnie Was There
+Ocean Ways
+My Neighbor Totoro
+Mononoke
+Miraculous Ladybug
+Heidi
+Grizzy et les Lemmings
+Star trek
+Oggy et les Cafard
+Oggy
+Oggy and the Cockroaches
+Seven & Me
+Invasion
+Rabbids Invasion
+Pirata & Capitano
+Knights of columbus
+Todd Rundgren
+Wu-Tang Clan
+Borderlands
+Bob Seger
+Im His Sparkler 4th Of July Boho
+Gentleman In The Street Beast In The Gym
+LEANN RIMES
+Hoptimist
+Billy Joel
+lieutenant
+Emojis
+Boy Scout
+Boy Scouts of America
+Eagle Scout Ive Got This Im An Eagle Scout
+Sorry I Cant Hear You I Took My Hearing Aids Out When I Saw You
+JOHNNY BRAVO
+Balloon Suicide
+Draymond Green
+Ew David
+work sucks lets find a tiki bar
+joe and the hoe
+I Am The Liquor
+Lions Not Sheep
+Patronum
+Luna Lovegood
+Moms Demand Action
+Cricut
+Chevrolet
+Be Kind to Everyone
+yoda
+AEW
+Post Malone
+Dunder Mifflin
+Red Sox
+Live PD
+Espresso
+Galaxy
+LIVE NATION
+CATAN
+Misuse
+keith haring
+Filthy Animal
+Because Elf On The Shelf
+MILK SHAKE
+MILK_SHAKE
+DRINKING CLAWS
+COBRA KAI
+KEHLANI
+LUCKIN
+RAELYNN
+Donald Trump Likes Nickelback
+JOHN DENVER
+VAMPIRE DIARIES
+RAM1
+SEX PISTOLS
+EVERY CHILD MATTERS
+NFL
+IN MY DEFENSE I WAS LEFT UNSUPERVISED
+HUNTER
+DUA LIPA
+Volkswagen
+RUN THE JEWELS
+DESPICABLE ME
+PANTONE
+CURB YOUR ENTHUSIASM
+RUPAUL
+Rage Against The Machine
+Lil Durk
+Brothers Osborne
+Kansas City Chiefs
+baby yoda
+cat in the hat
+bridgerton
+Talking Heads
+Olympic
+AFC Tennessee Titans
+Pete The cat
+Eric ChuRCH
+LOS ANGELES DODGERS
+Pittsburgh Steelers
+Champions
+Green Bay Packers
+ATLANTA BRAVES
+JOJO'S BIZARRE ADVENTURE
+THE SUPREMES
+Hairy Slother
+Coco Chanel
+Stranger Thing
+NASCAR
+Grumpy Cat
+St. Louis Cardinals
+Dumpster Fire
+Crown royal
+Mine Craft
+Cheech and Chong
+Champion
+Life is Better at The Campsited
+UNO
+DUNKIN' DONUTS
+TED LASSO
+Netflix
+ABBA
+Van Halen
+Tyler childers
+George Strait
+Soul flower
+Tacos
+SQUAREPANTS
+Kids Gabbys Dollhouse Cakey Cat Sprinkle
+Gordito
+motley crue
+gun & rose
+harley davidson
+merry christmas from heaven`;
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.get(['ideasTrademarks'], result => {
+    if (!result.ideasTrademarks) {
+      chrome.storage.sync.set({ ideasTrademarks: DEFAULT_IDEAS_TRADEMARKS });
+    }
+  });
+});
+
 // Logger helpers
 const logger = {
   log: (...args) => DEBUG && console.log('[iMerch]', ...args),

@@ -524,7 +524,12 @@ motley crue
 gun & rose
 harley davidson
 merry christmas from heaven`;
-  document.getElementById("ideasTrademarks").value = result.ideasTrademarks || DEFAULT_TRADEMARKS;
+  const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
+  document.getElementById("ideasTrademarks").value = savedTrademarks;
+  // Tự động lưu default vào storage nếu chưa có
+  if (!result.ideasTrademarks) {
+    chrome.storage.sync.set({ ideasTrademarks: DEFAULT_TRADEMARKS });
+  }
 });
 
 // Fetch models from API
