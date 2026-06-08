@@ -302,11 +302,11 @@ function extractProductInfo(html, knownAsin) {
   const imageMatch = html.match(/"hiRes":"(https:\/\/m\.media-amazon\.com\/images\/I\/([^"}]+))"/);
   const titleMatch = html.match(/<span id="productTitle"[^>]*>([\s\S]*?)<\/span>/);
   const brandMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/);
-  // Lấy bullets từ #productFactsDesktopExpander (cách mCrawl.py dùng)
+  // Lấy bullets từ #productFactsDesktopExpander > div.a-expander-content > ul
   const JUNK_BULLET = 'Lightweight, Classic fit, Double-needle sleeve and bottom hem';
-  const productFactsSection = html.match(/id="productFactsDesktopExpander"[\s\S]{0,300}<ul[^>]*>([\s\S]*?)<\/ul>/);
+  const productFactsSection = html.match(/id="productFactsDesktopExpander"[\s\S]{0,2000}?<ul[^>]*a-unordered-list[^>]*>([\s\S]*?)<\/ul>/);
   const bulletMatches = productFactsSection
-    ? [...productFactsSection[1].matchAll(/<li[^>]*>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/g)]
+    ? [...productFactsSection[1].matchAll(/<span[^>]*a-list-item[^>]*>([\s\S]*?)<\/span>/g)]
     : [];
 
   let sku = "";
