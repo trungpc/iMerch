@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupImageSettingsPanel();
     setupGenerateImagesButton();
     setupDownloadButton();
+    setupSelectAllYouthButton();
     setupUploadDriveButton();
 
     // Nếu đã có analysis từ lần trước
@@ -544,6 +545,7 @@ function updateGalleryItem(element, data, error) {
         // Show bulk buttons
         document.getElementById('downloadSelectedBtn').style.display = 'flex';
         document.getElementById('uploadDriveBtn').style.display = 'flex';
+        document.getElementById('selectAllYouthBtn').style.display = 'inline-block';
         populateSheetSelect();
         const selectAllImagesBtn = document.getElementById('selectAllImagesBtn');
         selectAllImagesBtn.style.display = 'inline-block';
@@ -583,6 +585,17 @@ function sanitizeFilename(str) {
 
 function getFileExtension(url) {
     try { const p = new URL(url).pathname; return p.split('.').pop().split('?')[0] || 'png'; } catch { return 'png'; }
+}
+
+function setupSelectAllYouthButton() {
+    const youthBtn = document.getElementById('selectAllYouthBtn');
+    if (!youthBtn) return;
+    youthBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.youth-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => { cb.checked = !allChecked; });
+        youthBtn.textContent = allChecked ? '☑️ Chọn tất cả Youth' : '☐ Bỏ chọn Youth';
+    });
 }
 
 async function populateSheetSelect() {
