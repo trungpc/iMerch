@@ -313,7 +313,7 @@ function extractProductInfo(html, knownAsin) {
 
   let brand = "";
   if (brandMatch) {
-    brand = brandMatch[1].replace(/<[^>]+>/g, '').replace(/Visit the|Store|Brand:/gi, '').trim();
+    brand = brandMatch[1].replace(/<[^>]+>/g, '').trim();
   }
 
   // Lấy bullets: tìm section bằng indexOf rồi slice, tránh regex backtracking
