@@ -881,7 +881,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   "niche_analysis": "2-3 sentence summary of the visual style, theme, and patterns you see across these designs",
   "ideas": [
     {
-      "title": "SEO-optimized product title for the primary target audience, max 60 characters, no brand names, do NOT include generic product type words such as T-Shirt, Tee, Shirt, Top, Apparel, Clothing",
+      "title": "SEO-optimized product title for the primary target audience, max 60 characters. Do NOT include: brand names, trademarked terms, copyrighted characters/slogans/IPs protected in the United States, or generic product type words such as T-Shirt, Tee, Shirt, Top, Apparel, Clothing",
       "description": "Mô tả ngắn gọn ý tưởng thiết kế và lý do sẽ bán tốt (viết bằng tiếng Việt)",
       "audience": "Target audience (e.g. Men 25-40, Dog moms, Nurses)",
       "style": "Visual style (e.g. Vintage, Minimalist, Watercolor)",
