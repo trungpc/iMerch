@@ -911,7 +911,13 @@
                     </div>
                     <div class="config-field full-width">
                         <label for="cfgNegative">Negative Prompt</label>
-                        <input type="text" id="cfgNegative" placeholder="Mô tả những gì không muốn xuất hiện trong ảnh...">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="cfgNegative" placeholder="Mô tả những gì không muốn xuất hiện trong ảnh..." style="flex:1;">
+                            <button class="generate-btn" id="generateImagesBtn" style="flex-shrink:0; padding:8px 16px; font-size:12px; white-space:nowrap;">
+                                <span class="btn-text">🎨 Generate Images</span>
+                                <span class="btn-spinner"></span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1020,12 +1026,6 @@
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:center; padding: 16px 0 20px;">
-                    <button class="generate-btn" id="generateImagesBtn">
-                        <span class="btn-text">🎨 Generate Images</span>
-                        <span class="btn-spinner"></span>
-                    </button>
-                </div>
             </div>
 
             <!-- Generated Images Gallery -->
