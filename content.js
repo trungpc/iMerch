@@ -302,12 +302,7 @@ function extractProductInfo(html, knownAsin) {
   const imageMatch = html.match(/"hiRes":"(https:\/\/m\.media-amazon\.com\/images\/I\/([^"}]+))"/);
   const titleMatch = html.match(/<span id="productTitle"[^>]*>([\s\S]*?)<\/span>/);
   const brandMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/);
-  // Lấy bullets từ #productFactsDesktopExpander > div.a-expander-content > ul
   const JUNK_BULLET = 'Lightweight, Classic fit, Double-needle sleeve and bottom hem';
-  const productFactsSection = html.match(/id="productFactsDesktopExpander"[\s\S]{0,2000}?<ul[^>]*a-unordered-list[^>]*>([\s\S]*?)<\/ul>/);
-  const bulletMatches = productFactsSection
-    ? [...productFactsSection[1].matchAll(/<span[^>]*a-list-item[^>]*>([\s\S]*?)<\/span>/g)]
-    : [];
 
   let sku = "";
   if (imageMatch) {
@@ -321,10 +316,26 @@ function extractProductInfo(html, knownAsin) {
     brand = brandMatch[1].replace(/<[^>]+>/g, '').replace(/Visit the|Store|Brand:/gi, '').trim();
   }
 
-  const bullets = bulletMatches
-    .map(m => m[1].replace(/<[^>]+>/g, '').replace(JUNK_BULLET, '').trim())
-    .filter(b => b.length > 10 && b.length < 300)
-    .slice(0, 2);
+  // Lấy bullets: tìm section bằng indexOf rồi slice, tránh regex backtracking
+  const bullets = [];
+  const BULLET_SECTIONS = ['id="productFactsDesktopExpander"', 'id="feature-bullets"'];
+  for (const sectionId of BULLET_SECTIONS) {
+    const sectionStart = html.indexOf(sectionId);
+    if (sectionStart === -1) continue;
+    const ulStart = html.indexOf('<ul', sectionStart);
+    if (ulStart === -1) continue;
+    const ulEnd = html.indexOf('</ul>', ulStart);
+    if (ulEnd === -1) continue;
+    const ulHtml = html.slice(ulStart, ulEnd + 5);
+    const spanMatches = [...ulHtml.matchAll(/<span[^>]*a-list-item[^>]*>([\s\S]*?)<\/span>/g)];
+    const extracted = spanMatches
+      .map(m => m[1].replace(/<[^>]+>/g, '').replace(JUNK_BULLET, '').trim())
+      .filter(b => b.length > 10 && b.length < 300);
+    if (extracted.length > 0) {
+      bullets.push(...extracted.slice(0, 2));
+      break;
+    }
+  }
 
   return {
     asin: knownAsin || (asinMatch ? asinMatch[1] : "N/A"),
