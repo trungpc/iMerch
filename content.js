@@ -302,10 +302,11 @@ function extractProductInfo(html, knownAsin) {
   const imageMatch = html.match(/"hiRes":"(https:\/\/m\.media-amazon\.com\/images\/I\/([^"}]+))"/);
   const titleMatch = html.match(/<span id="productTitle"[^>]*>([\s\S]*?)<\/span>/);
   const brandMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/);
-  // Chỉ lấy bullets trong section #feature-bullets, tránh bắt breadcrumb
-  const featureBulletsSection = html.match(/id="feature-bullets"[\s\S]{0,200}<ul[^>]*>([\s\S]*?)<\/ul>/);
-  const bulletMatches = featureBulletsSection
-    ? [...featureBulletsSection[1].matchAll(/<span[^>]*class="[^"]*a-list-item[^"]*"[^>]*>([\s\S]*?)<\/span>/g)]
+  // Lấy bullets từ #productFactsDesktopExpander (cách mCrawl.py dùng)
+  const JUNK_BULLET = 'Lightweight, Classic fit, Double-needle sleeve and bottom hem';
+  const productFactsSection = html.match(/id="productFactsDesktopExpander"[\s\S]{0,300}<ul[^>]*>([\s\S]*?)<\/ul>/);
+  const bulletMatches = productFactsSection
+    ? [...productFactsSection[1].matchAll(/<li[^>]*>[\s\S]*?<span[^>]*>([\s\S]*?)<\/span>/g)]
     : [];
 
   let sku = "";
@@ -321,7 +322,7 @@ function extractProductInfo(html, knownAsin) {
   }
 
   const bullets = bulletMatches
-    .map(m => m[1].replace(/<[^>]+>/g, '').trim())
+    .map(m => m[1].replace(/<[^>]+>/g, '').replace(JUNK_BULLET, '').trim())
     .filter(b => b.length > 10 && b.length < 300)
     .slice(0, 2);
 
