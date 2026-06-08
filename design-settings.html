@@ -361,71 +361,7 @@
     </div>
   </div>
 
-  <!-- Column Mapping -->
-  <div class="card">
-    <div class="card-header">📋 Column Mapping</div>
-    <div class="card-body">
-      <div class="grid-2">
-        <div class="field">
-          <label>ASIN Column Header</label>
-          <input type="text" id="colAsinHeader" placeholder="e.g. ASIN">
-        </div>
-        <div class="field">
-          <label>Title Column Header</label>
-          <input type="text" id="colTitleHeader" placeholder="e.g. Title">
-        </div>
-        <div class="field">
-          <label>Drive URL Column Header</label>
-          <input type="text" id="colUrlHeader" placeholder="e.g. URL">
-        </div>
-        <div class="field">
-          <label>Youth Column Header</label>
-          <input type="text" id="colYouthHeader" placeholder="e.g. Youth">
-        </div>
-        <div class="field">
-          <label>Colors Column Header</label>
-          <input type="text" id="colColorsHeader" placeholder="e.g. Colors">
-        </div>
-        <div class="field">
-          <label>Max Filename Length</label>
-          <input type="number" id="maxFilenameLength" value="60" min="1" max="255">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Image Hover Analysis -->
-  <div class="card">
-    <div class="card-header">🖼️ Image Hover Analysis</div>
-    <div class="card-body">
-      <div class="checkbox-row">
-        <input type="checkbox" id="hoverEnabled" checked>
-        <label for="hoverEnabled">Enable Analyze button on hover for images (all websites)</label>
-      </div>
-      <div class="grid-2">
-        <div class="field">
-          <label>Chiều rộng tối thiểu (px)</label>
-          <input type="number" id="hoverMinWidth" value="300" min="50" max="2000" placeholder="300">
-        </div>
-        <div class="field">
-          <label>Vị trí nút</label>
-          <select id="hoverBtnPosition">
-            <option value="top-right">Góc trên phải</option>
-            <option value="top-left">Góc trên trái</option>
-            <option value="bottom-right">Góc dưới phải</option>
-            <option value="bottom-left">Góc dưới trái</option>
-            <option value="center">Giữa ảnh</option>
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>Danh sách domain bỏ qua (mỗi dòng 1 domain, ví dụ: google.com)</label>
-        <textarea id="hoverBlacklist" placeholder="google.com&#10;facebook.com&#10;twitter.com" style="min-height:80px;"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ideas Filter -->
+  <!-- Ideas Generator -->
   <div class="card">
     <div class="card-header">💡 Ideas Generator</div>
     <div class="card-body">
@@ -498,6 +434,70 @@
         <label>Trademark Keywords (mỗi dòng 1 từ/regex, không phân biệt hoa thường)</label>
         <textarea id="ideasTrademarks" placeholder="Disney&#10;Marvel&#10;NFL&#10;NBA&#10;Harry Potter" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
         <small style="color:#888;">Sản phẩm có brand/title/bullet chứa bất kỳ keyword nào sẽ bị loại trước khi gửi thumbnail lên AI.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Mapping -->
+  <div class="card">
+    <div class="card-header">📋 Column Mapping</div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div class="field">
+          <label>ASIN Column Header</label>
+          <input type="text" id="colAsinHeader" placeholder="e.g. ASIN">
+        </div>
+        <div class="field">
+          <label>Title Column Header</label>
+          <input type="text" id="colTitleHeader" placeholder="e.g. Title">
+        </div>
+        <div class="field">
+          <label>Drive URL Column Header</label>
+          <input type="text" id="colUrlHeader" placeholder="e.g. URL">
+        </div>
+        <div class="field">
+          <label>Youth Column Header</label>
+          <input type="text" id="colYouthHeader" placeholder="e.g. Youth">
+        </div>
+        <div class="field">
+          <label>Colors Column Header</label>
+          <input type="text" id="colColorsHeader" placeholder="e.g. Colors">
+        </div>
+        <div class="field">
+          <label>Max Filename Length</label>
+          <input type="number" id="maxFilenameLength" value="60" min="1" max="255">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Hover Analysis -->
+  <div class="card">
+    <div class="card-header">🖼️ Image Hover Analysis</div>
+    <div class="card-body">
+      <div class="checkbox-row">
+        <input type="checkbox" id="hoverEnabled" checked>
+        <label for="hoverEnabled">Enable Analyze button on hover for images (all websites)</label>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Chiều rộng tối thiểu (px)</label>
+          <input type="number" id="hoverMinWidth" value="300" min="50" max="2000" placeholder="300">
+        </div>
+        <div class="field">
+          <label>Vị trí nút</label>
+          <select id="hoverBtnPosition">
+            <option value="top-right">Góc trên phải</option>
+            <option value="top-left">Góc trên trái</option>
+            <option value="bottom-right">Góc dưới phải</option>
+            <option value="bottom-left">Góc dưới trái</option>
+            <option value="center">Giữa ảnh</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Danh sách domain bỏ qua (mỗi dòng 1 domain, ví dụ: google.com)</label>
+        <textarea id="hoverBlacklist" placeholder="google.com&#10;facebook.com&#10;twitter.com" style="min-height:80px;"></textarea>
       </div>
     </div>
   </div>
