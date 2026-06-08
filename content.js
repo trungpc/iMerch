@@ -302,7 +302,11 @@ function extractProductInfo(html, knownAsin) {
   const imageMatch = html.match(/"hiRes":"(https:\/\/m\.media-amazon\.com\/images\/I\/([^"}]+))"/);
   const titleMatch = html.match(/<span id="productTitle"[^>]*>([\s\S]*?)<\/span>/);
   const brandMatch = html.match(/id="bylineInfo"[^>]*>([\s\S]*?)<\/a>/);
-  const bulletMatches = [...html.matchAll(/<li[^>]*>\s*<span[^>]*class="[^"]*a-list-item[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/li>/g)];
+  // Chỉ lấy bullets trong section #feature-bullets, tránh bắt breadcrumb
+  const featureBulletsSection = html.match(/id="feature-bullets"[\s\S]{0,200}<ul[^>]*>([\s\S]*?)<\/ul>/);
+  const bulletMatches = featureBulletsSection
+    ? [...featureBulletsSection[1].matchAll(/<span[^>]*class="[^"]*a-list-item[^"]*"[^>]*>([\s\S]*?)<\/span>/g)]
+    : [];
 
   let sku = "";
   if (imageMatch) {
