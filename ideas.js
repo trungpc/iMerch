@@ -534,6 +534,7 @@ function updateGalleryItem(element, data, error) {
         // Show bulk buttons
         document.getElementById('downloadSelectedBtn').style.display = 'flex';
         document.getElementById('uploadDriveBtn').style.display = 'flex';
+        populateSheetSelect();
         const selectAllImagesBtn = document.getElementById('selectAllImagesBtn');
         selectAllImagesBtn.style.display = 'inline-block';
         const allChecked = Array.from(document.querySelectorAll('.gallery-checkbox')).every(cb => cb.checked);
@@ -574,40 +575,18 @@ function getFileExtension(url) {
     try { const p = new URL(url).pathname; return p.split('.').pop().split('?')[0] || 'png'; } catch { return 'png'; }
 }
 
-function showSheetPicker(sheetNames) {
-    return new Promise(resolve => {
-        // Remove existing picker
-        document.getElementById('ideasSheetPicker')?.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'ideasSheetPicker';
-        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
-
-        const box = document.createElement('div');
-        box.style.cssText = 'background:#1e1b4b;border:1px solid rgba(167,139,250,0.3);border-radius:12px;padding:24px;min-width:280px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
-        box.innerHTML = `
-            <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:16px;">☁️ Chọn Sheet để upload</div>
-            <div style="display:flex;flex-direction:column;gap:8px;" id="sheetPickerList"></div>
-            <div style="margin-top:16px;display:flex;justify-content:flex-end;">
-                <button id="sheetPickerCancel" style="padding:6px 14px;font-size:12px;border:1px solid rgba(167,139,250,0.3);background:transparent;color:#a78bfa;border-radius:6px;cursor:pointer;">Huỷ</button>
-            </div>`;
-
-        const list = box.querySelector('#sheetPickerList');
-        sheetNames.forEach(name => {
-            const btn = document.createElement('button');
-            btn.textContent = name;
-            btn.style.cssText = 'padding:8px 14px;font-size:13px;border:1px solid rgba(167,139,250,0.3);background:rgba(167,139,250,0.08);color:#e2e8f0;border-radius:8px;cursor:pointer;text-align:left;';
-            btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(167,139,250,0.2)');
-            btn.addEventListener('mouseleave', () => btn.style.background = 'rgba(167,139,250,0.08)');
-            btn.addEventListener('click', () => { overlay.remove(); resolve(name); });
-            list.appendChild(btn);
-        });
-
-        box.querySelector('#sheetPickerCancel').addEventListener('click', () => { overlay.remove(); resolve(null); });
-        overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-    });
+async function populateSheetSelect() {
+    const select = document.getElementById('uploadSheetSelect');
+    if (!select) return;
+    const cfg = await new Promise(resolve =>
+        chrome.storage.sync.get(['ideasSheetNames', 'sheetName'], resolve)
+    );
+    const rawNames = cfg.ideasSheetNames || cfg.sheetName || '';
+    const sheetNames = rawNames.split(',').map(s => s.trim()).filter(Boolean);
+    if (sheetNames.length === 0) return;
+    const prev = select.value;
+    select.innerHTML = sheetNames.map(n => `<option value="${escHtml(n)}"${n === prev ? ' selected' : ''}>${escHtml(n)}</option>`).join('');
+    select.style.display = 'inline-block';
 }
 
 function setupUploadDriveButton() {
@@ -634,16 +613,12 @@ function setupUploadDriveButton() {
             return;
         }
 
-        // Sheet picker if multiple sheets configured
-        let selectedSheet = sheetNames.length === 1 ? sheetNames[0] : null;
-        if (sheetNames.length > 1) {
-            selectedSheet = await showSheetPicker(sheetNames);
-            if (!selectedSheet) return; // user cancelled
-        } else if (sheetNames.length === 0) {
+        if (sheetNames.length === 0) {
             alert('Vui lòng cấu hình Sheet Name cho Ideas trong Settings.');
             return;
         }
 
+        const selectedSheet = document.getElementById('uploadSheetSelect')?.value || sheetNames[0];
         if (!confirm(`Upload ${checked.length} ảnh lên Drive → Sheet "${selectedSheet}"?`)) return;
 
         uploadBtn.disabled = true;
