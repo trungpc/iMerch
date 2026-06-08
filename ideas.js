@@ -520,10 +520,14 @@ function updateGalleryItem(element, data, error) {
             });
 
             const titleInput = newDiv.querySelector('.gallery-item-title');
-            titleInput.addEventListener('input', () => {
-                titleInput.classList.toggle('title-too-long', titleInput.value.length > 60);
-                titleInput.title = titleInput.value.length > 60 ? `⚠️ ${titleInput.value.length} ký tự (vượt quá 60)` : '';
-            });
+            const validateTitle = () => {
+                const tooLong = titleInput.value.length > 60;
+                titleInput.style.borderColor = tooLong ? '#f87171' : 'rgba(167,139,250,0.3)';
+                titleInput.style.boxShadow = tooLong ? '0 0 0 2px rgba(248,113,113,0.3)' : '';
+                titleInput.title = tooLong ? `⚠️ ${titleInput.value.length} ký tự (vượt quá 60)` : '';
+            };
+            titleInput.addEventListener('input', validateTitle);
+            validateTitle(); // check on render
 
             newDiv.querySelector('.individual-download-btn').addEventListener('click', (e) => {
                 const btn = e.currentTarget;
