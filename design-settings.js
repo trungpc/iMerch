@@ -668,6 +668,52 @@ document.getElementById("refreshGeminiModels").addEventListener("click", fetchGe
 document.getElementById("refreshOpenaiModels").addEventListener("click", fetchOpenAIModels);
 document.getElementById("refreshAutoCheckModels").addEventListener("click", fetchAutoCheckModels);
 
+document.getElementById("refreshIdeasGeminiModels").addEventListener("click", async () => {
+  const key = getVal("geminiKey");
+  if (!key) { showStatus("Enter Gemini API key first.", "error"); return; }
+  const btn = document.getElementById("refreshIdeasGeminiModels");
+  const select = document.getElementById("ideasGeminiModel");
+  const current = select.value;
+  btn.classList.add("spinning"); btn.disabled = true;
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=200`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const models = (data.models || [])
+      .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
+      .map(m => m.name.replace("models/", ""))
+      .filter(id => id.includes("gemini")).sort();
+    if (!models.length) throw new Error("No models found.");
+    select.innerHTML = models.map(id => `<option value="${id}"${id === current ? " selected" : ""}>${id}</option>`).join("");
+    if (!models.includes(current) && models.length) select.value = models[0];
+    showStatus(`✅ Loaded ${models.length} Gemini models (Ideas).`);
+  } catch (e) { showStatus(`Gemini: ${e.message}`, "error"); }
+  finally { btn.classList.remove("spinning"); btn.disabled = false; }
+});
+
+document.getElementById("refreshIdeasOpenaiModels").addEventListener("click", async () => {
+  const key = getVal("openaiKey");
+  if (!key) { showStatus("Enter OpenAI API key first.", "error"); return; }
+  const btn = document.getElementById("refreshIdeasOpenaiModels");
+  const select = document.getElementById("ideasOpenaiModel");
+  const current = select.value;
+  btn.classList.add("spinning"); btn.disabled = true;
+  try {
+    const res = await fetch("https://api.openai.com/v1/models", { headers: { "Authorization": `Bearer ${key}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const models = (data.data || [])
+      .map(m => m.id)
+      .filter(id => /^(gpt|o\d)/.test(id) && !id.includes("audio") && !id.includes("realtime") && !id.includes("instruct"))
+      .sort();
+    if (!models.length) throw new Error("No models found.");
+    select.innerHTML = models.map(id => `<option value="${id}"${id === current ? " selected" : ""}>${id}</option>`).join("");
+    if (!models.includes(current) && models.length) select.value = models[0];
+    showStatus(`✅ Loaded ${models.length} OpenAI models (Ideas).`);
+  } catch (e) { showStatus(`OpenAI: ${e.message}`, "error"); }
+  finally { btn.classList.remove("spinning"); btn.disabled = false; }
+});
+
 // Save
 document.getElementById("saveBtn").addEventListener("click", () => {
   const btn = document.getElementById("saveBtn");
