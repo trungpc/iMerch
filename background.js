@@ -876,7 +876,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   "niche_analysis": "2-3 sentence summary of the visual style, theme, and patterns you see across these designs",
   "ideas": [
     {
-      "title": "Short concept title",
+      "title": "SEO-optimized product title for the primary target audience, max 60 characters, no brand names",
       "description": "Mô tả ngắn gọn ý tưởng thiết kế và lý do sẽ bán tốt (viết bằng tiếng Việt)",
       "audience": "Target audience (e.g. Men 25-40, Dog moms, Nurses)",
       "style": "Visual style (e.g. Vintage, Minimalist, Watercolor)",
