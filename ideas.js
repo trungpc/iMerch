@@ -45,12 +45,20 @@ function renderThumbnails() {
         const item = document.createElement('div');
         item.className = 'thumb-item';
         item.title = `${p.title}\nRank: #${p.rank.toLocaleString()}`;
+        const asinUrl = `https://www.amazon.com/dp/${p.asin}`;
         item.innerHTML = `
-            <img src="${p.thumbnail}" alt="" loading="lazy" onerror="this.closest('.thumb-item').style.display='none'">
-            <div class="rank-badge">#${p.rank.toLocaleString()}</div>
-            <div class="exclude-overlay">🚫</div>
+            <div class="thumb-item-img">
+                <img src="${p.thumbnail}" alt="" loading="lazy" onerror="this.closest('.thumb-item').style.display='none'">
+                <div class="rank-badge">#${p.rank.toLocaleString()}</div>
+                <div class="exclude-overlay">🚫</div>
+            </div>
+            <div class="thumb-item-info">
+                <span class="thumb-item-num">${i + 1}.</span>
+                <a class="thumb-item-asin" href="${asinUrl}" target="_blank" title="${escHtml(p.title)}">${p.asin}</a>
+            </div>
         `;
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.thumb-item-asin')) return; // let link open
             if (excludedIndexes.has(i)) {
                 excludedIndexes.delete(i);
                 item.classList.remove('excluded');
