@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Apply thumbnail size from settings
     chrome.storage.sync.get('ideasThumbSize', r => {
-        const size = r.ideasThumbSize || 130;
-        document.documentElement.style.setProperty('--thumb-size', `${size}px`);
+        const cols = r.ideasThumbSize || 6;
+        document.documentElement.style.setProperty('--thumb-cols', cols);
     });
 
     renderThumbnails();
@@ -685,12 +685,15 @@ function setupUploadDriveButton() {
         uploadBtn.querySelector('.btn-spinner').style.display = 'none';
 
         if (response && response.success) {
-            statusEl.textContent = `✅ Uploaded ${response.uploaded || checked.length} image(s) to "${selectedSheet}"!`;
-            galleryElements.forEach(el => { if (el) el.style.outline = '2px solid #10b981'; });
+            response.results?.forEach((result, i) => {
+                if (result.success && galleryElements[i]) {
+                    galleryElements[i].style.borderColor = '#34d399';
+                }
+            });
+            statusEl.textContent = `✅ Done: ${response.successCount ?? response.uploaded ?? checked.length} uploaded, ${response.errorCount ?? 0} failed.`;
         } else {
-            statusEl.textContent = `❌ Error: ${response?.error || 'Unknown error'}`;
+            statusEl.textContent = `❌ Error: ${response?.error || response?.message || 'Unknown error'}`;
         }
-        setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
     });
 }
 
