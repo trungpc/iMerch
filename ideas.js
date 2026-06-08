@@ -163,11 +163,11 @@ function renderIdeas(text) {
                     ${idea.style ? `<span class="idea-tag tag-style">🎨 ${escHtml(idea.style)}</span>` : ''}
                 </div>
             </div>
-            ${idea.description ? `<div class="idea-row-desc">${escHtml(idea.description)}</div>` : ''}
             ${idea.prompt ? `<div class="idea-row-prompt">
                 <div class="idea-prompt-text">${escHtml(idea.prompt)}</div>
                 <button class="copy-prompt-btn" data-prompt="${escAttr(idea.prompt)}" style="flex-shrink:0;">📋 Copy</button>
             </div>` : ''}
+            ${idea.description ? `<div class="idea-row-desc">${escHtml(idea.description)}</div>` : ''}
         </div>`;
     });
     html += '</div>';
