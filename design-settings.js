@@ -62,7 +62,7 @@ const KEYS = [
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
-  "ideasTrademarks", "ideasMaxProducts"
+  "ideasTrademarks", "ideasMaxProducts", "ideasGeminiModel", "ideasOpenaiModel"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -525,6 +525,10 @@ gun & rose
 harley davidson
 merry christmas from heaven`;
   document.getElementById("ideasMaxProducts").value = result.ideasMaxProducts ?? 12;
+  const ideasGeminiEl = document.getElementById("ideasGeminiModel");
+  if (ideasGeminiEl) ideasGeminiEl.value = result.ideasGeminiModel || "gemini-2.5-flash";
+  const ideasOpenaiEl = document.getElementById("ideasOpenaiModel");
+  if (ideasOpenaiEl) ideasOpenaiEl.value = result.ideasOpenaiModel || "gpt-4.1";
   const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
   document.getElementById("ideasTrademarks").value = savedTrademarks;
   // Tự động lưu default vào storage nếu chưa có
@@ -690,6 +694,8 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
     ideasTrademarks: document.getElementById("ideasTrademarks")?.value.trim() || "",
     ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
+    ideasGeminiModel: document.getElementById("ideasGeminiModel")?.value || "gemini-2.5-flash",
+    ideasOpenaiModel: document.getElementById("ideasOpenaiModel")?.value || "gpt-4.1",
   };
 
   chrome.storage.sync.set(settings, () => {
