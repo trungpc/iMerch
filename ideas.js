@@ -560,6 +560,42 @@ function getFileExtension(url) {
     try { const p = new URL(url).pathname; return p.split('.').pop().split('?')[0] || 'png'; } catch { return 'png'; }
 }
 
+function showSheetPicker(sheetNames) {
+    return new Promise(resolve => {
+        // Remove existing picker
+        document.getElementById('ideasSheetPicker')?.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'ideasSheetPicker';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+        const box = document.createElement('div');
+        box.style.cssText = 'background:#1e1b4b;border:1px solid rgba(167,139,250,0.3);border-radius:12px;padding:24px;min-width:280px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        box.innerHTML = `
+            <div style="font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:16px;">☁️ Chọn Sheet để upload</div>
+            <div style="display:flex;flex-direction:column;gap:8px;" id="sheetPickerList"></div>
+            <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+                <button id="sheetPickerCancel" style="padding:6px 14px;font-size:12px;border:1px solid rgba(167,139,250,0.3);background:transparent;color:#a78bfa;border-radius:6px;cursor:pointer;">Huỷ</button>
+            </div>`;
+
+        const list = box.querySelector('#sheetPickerList');
+        sheetNames.forEach(name => {
+            const btn = document.createElement('button');
+            btn.textContent = name;
+            btn.style.cssText = 'padding:8px 14px;font-size:13px;border:1px solid rgba(167,139,250,0.3);background:rgba(167,139,250,0.08);color:#e2e8f0;border-radius:8px;cursor:pointer;text-align:left;';
+            btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(167,139,250,0.2)');
+            btn.addEventListener('mouseleave', () => btn.style.background = 'rgba(167,139,250,0.08)');
+            btn.addEventListener('click', () => { overlay.remove(); resolve(name); });
+            list.appendChild(btn);
+        });
+
+        box.querySelector('#sheetPickerCancel').addEventListener('click', () => { overlay.remove(); resolve(null); });
+        overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
 function setupUploadDriveButton() {
     const uploadBtn = document.getElementById('uploadDriveBtn');
     const statusEl = document.getElementById('uploadStatus');
@@ -568,7 +604,33 @@ function setupUploadDriveButton() {
     uploadBtn.addEventListener('click', async () => {
         const checked = document.querySelectorAll('.gallery-checkbox:checked');
         if (checked.length === 0) { alert('Vui lòng chọn ít nhất 1 ảnh để tải lên Drive.'); return; }
-        if (!confirm(`Bạn có chắc chắn muốn tải ${checked.length} ảnh lên Google Drive và ghi vào Sheet?`)) return;
+
+        // Load Ideas-specific Drive/Sheet config
+        const cfg = await new Promise(resolve =>
+            chrome.storage.sync.get(['ideasDriveFolderId', 'ideasSheetId', 'ideasSheetNames', 'driveFolderId', 'sheetId', 'sheetName'], resolve)
+        );
+        // Fallback to global config if Ideas config not set
+        const folderId = cfg.ideasDriveFolderId || cfg.driveFolderId || '';
+        const sheetId  = cfg.ideasSheetId || cfg.sheetId || '';
+        const rawNames = cfg.ideasSheetNames || cfg.sheetName || '';
+        const sheetNames = rawNames.split(',').map(s => s.trim()).filter(Boolean);
+
+        if (!folderId || !sheetId) {
+            alert('Vui lòng cấu hình Google Drive Folder ID và Sheet ID cho Ideas trong Settings.');
+            return;
+        }
+
+        // Sheet picker if multiple sheets configured
+        let selectedSheet = sheetNames.length === 1 ? sheetNames[0] : null;
+        if (sheetNames.length > 1) {
+            selectedSheet = await showSheetPicker(sheetNames);
+            if (!selectedSheet) return; // user cancelled
+        } else if (sheetNames.length === 0) {
+            alert('Vui lòng cấu hình Sheet Name cho Ideas trong Settings.');
+            return;
+        }
+
+        if (!confirm(`Upload ${checked.length} ảnh lên Drive → Sheet "${selectedSheet}"?`)) return;
 
         uploadBtn.disabled = true;
         uploadBtn.querySelector('.btn-spinner').style.display = 'inline-block';
@@ -576,9 +638,9 @@ function setupUploadDriveButton() {
         statusEl.textContent = `⏳ Đang tải lên ${checked.length} ảnh...`;
 
         const globalPrefix = document.getElementById('cfgFilename').value.trim();
-
         const checkedArr = Array.from(checked);
         const galleryElements = checkedArr.map(cb => cb.closest('.gallery-item'));
+
         const items = checkedArr.map((cb, i) => {
             const galleryItem = galleryElements[i];
             const colorValue = cb.dataset.color || '';
@@ -587,7 +649,6 @@ function setupUploadDriveButton() {
             const ext = getFileExtension(cb.dataset.url) || 'png';
             const isYouth = galleryItem?.querySelector('.youth-checkbox')?.checked || false;
             const youthSuffix = isYouth ? '' : ' (adult)';
-            // Title: per-item input → fallback global prefix → fallback "Design"
             const itemTitle = galleryItem?.querySelector('.gallery-item-title')?.value.trim() || globalPrefix || 'Design';
             const sanitizedTitle = sanitizeFilename(itemTitle);
             return {
@@ -596,7 +657,11 @@ function setupUploadDriveButton() {
                 asin: '',
                 title: sanitizedTitle,
                 youth: isYouth ? 'Youth' : '',
-                color: colorValue
+                color: colorValue,
+                // Override Drive/Sheet config for this batch
+                overrideFolderId: folderId,
+                overrideSheetId: sheetId,
+                overrideSheetName: selectedSheet,
             };
         });
 
@@ -608,10 +673,8 @@ function setupUploadDriveButton() {
         uploadBtn.querySelector('.btn-spinner').style.display = 'none';
 
         if (response && response.success) {
-            statusEl.textContent = `✅ Đã tải lên ${response.uploaded || checked.length} ảnh!`;
-            galleryElements.forEach(el => {
-                if (el) el.style.outline = '2px solid #10b981';
-            });
+            statusEl.textContent = `✅ Đã tải lên ${response.uploaded || checked.length} ảnh vào "${selectedSheet}"!`;
+            galleryElements.forEach(el => { if (el) el.style.outline = '2px solid #10b981'; });
         } else {
             statusEl.textContent = `❌ Lỗi: ${response?.error || 'Unknown error'}`;
         }

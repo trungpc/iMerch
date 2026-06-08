@@ -726,8 +726,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const { driveFolderId, sheetId, sheetName, colAsinHeader, colTitleHeader, colUrlHeader, colYouthHeader, colColorsHeader } = await new Promise(resolve => {
           chrome.storage.sync.get(["driveFolderId", "sheetId", "sheetName", "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader"], resolve);
         });
-        if (!driveFolderId || !sheetId || !sheetName) throw new Error("Vui lòng cấu hình đầy đủ Drive Folder ID và Sheet ID trong phần cài đặt.");
-        const getResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!1:1`, { headers: new Headers({ 'Authorization': 'Bearer ' + token }) });
+        // Allow per-batch override (e.g. from Ideas page with its own Drive/Sheet config)
+        const firstItem = items[0] || {};
+        const effectiveFolderId = firstItem.overrideFolderId || driveFolderId;
+        const effectiveSheetId  = firstItem.overrideSheetId  || sheetId;
+        const effectiveSheetName = firstItem.overrideSheetName || sheetName;
+        if (!effectiveFolderId || !effectiveSheetId || !effectiveSheetName) throw new Error("Vui lòng cấu hình đầy đủ Drive Folder ID và Sheet ID trong phần cài đặt.");
+        const getResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${effectiveSheetId}/values/${effectiveSheetName}!1:1`, { headers: new Headers({ 'Authorization': 'Bearer ' + token }) });
         if (!getResponse.ok) throw new Error(`Sheets Header Fetch Error: ${getResponse.status}`);
         const getResult = await getResponse.json();
         const headers = getResult.values ? getResult.values[0] : [];
@@ -754,7 +759,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               const fetchRes = await fetch(item.imageUrl);
               if (!fetchRes.ok) throw new Error("Failed to fetch image");
               const blob = await fetchRes.blob();
-              const driveResult = await uploadToDrive(blob, item.filename, driveFolderId, token);
+              const driveResult = await uploadToDrive(blob, item.filename, effectiveFolderId, token);
               addLog(`Uploaded [${idx + 1}/${items.length}]: ${item.filename}`);
               return { success: true, item, driveUrl: driveResult.directLink };
             } catch (err) {
@@ -775,7 +780,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           return row;
         });
         if (rows.length > 0) {
-          const appendResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED`, {
+          const appendResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${effectiveSheetId}/values/${effectiveSheetName}!A1:append?valueInputOption=USER_ENTERED`, {
             method: 'POST',
             headers: new Headers({ 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }),
             body: JSON.stringify({ values: rows })

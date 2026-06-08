@@ -62,7 +62,8 @@ const KEYS = [
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
-  "ideasTrademarks", "ideasMaxProducts", "ideasGeminiModel", "ideasOpenaiModel"
+  "ideasTrademarks", "ideasMaxProducts", "ideasGeminiModel", "ideasOpenaiModel",
+  "ideasDriveFolderId", "ideasSheetId", "ideasSheetNames"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -529,6 +530,9 @@ merry christmas from heaven`;
   if (ideasGeminiEl) ideasGeminiEl.value = result.ideasGeminiModel || "gemini-2.5-flash";
   const ideasOpenaiEl = document.getElementById("ideasOpenaiModel");
   if (ideasOpenaiEl) ideasOpenaiEl.value = result.ideasOpenaiModel || "gpt-4.1";
+  setVal("ideasDriveFolderId", result.ideasDriveFolderId);
+  setVal("ideasSheetId", result.ideasSheetId);
+  setVal("ideasSheetNames", result.ideasSheetNames);
   const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
   document.getElementById("ideasTrademarks").value = savedTrademarks;
   // Tự động lưu default vào storage nếu chưa có
@@ -696,6 +700,9 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
     ideasGeminiModel: document.getElementById("ideasGeminiModel")?.value || "gemini-2.5-flash",
     ideasOpenaiModel: document.getElementById("ideasOpenaiModel")?.value || "gpt-4.1",
+    ideasDriveFolderId: getVal("ideasDriveFolderId"),
+    ideasSheetId: getVal("ideasSheetId"),
+    ideasSheetNames: getVal("ideasSheetNames"),
   };
 
   chrome.storage.sync.set(settings, () => {
