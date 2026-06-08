@@ -600,6 +600,7 @@ async function processProducts() {
   } finally {
     isProcessing = false;
     logger.log('🔓 Batch processing finished');
+    updateAsinCount();
     if (hasPendingUpdates) {
       logger.log('↻ Found pending updates, restarting processing...');
       processProducts();
@@ -794,7 +795,9 @@ async function loadMorePages(count) {
   isLoadingPages = false;
   if (statusEl) setTimeout(() => {
     statusEl.textContent = `+${loadedExtraPages} pages loaded`;
+    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
   }, 2000);
+  updateAsinCount();
 
   // Re-apply sort if active
   if (currentSort) sortProducts(currentSort);
@@ -836,6 +839,7 @@ function injectSortBar() {
     <button id="imerch-btn-load5" style="${loadBtn}" title="Load 5 more pages">+5</button>
     <button id="imerch-btn-load10" style="${loadBtn}" title="Load 10 more pages">+10</button>
     <span id="imerch-load-status" style="font-size:10px;color:#888;"></span>
+    <span id="imerch-asin-count" style="font-size:10px;color:#6d28d9;font-weight:600;margin-left:2px;"></span>
   `;
 
   if (colInner && breadcrumbCol) {
@@ -861,6 +865,7 @@ function injectSortBar() {
   document.getElementById('imerch-btn-load5').addEventListener('click', () => loadMorePages(5));
   document.getElementById('imerch-btn-load10').addEventListener('click', () => loadMorePages(10));
 
+  setTimeout(updateAsinCount, 500);
   logger.log('iMerch sort bar injected');
   return true;
 }
@@ -868,6 +873,14 @@ function injectSortBar() {
 function trySortBarInject(attempts = 0) {
   if (injectSortBar()) return;
   if (attempts < 10) setTimeout(() => trySortBarInject(attempts + 1), 800);
+}
+
+function updateAsinCount() {
+  const el = document.getElementById('imerch-asin-count');
+  if (!el) return;
+  const total = document.querySelectorAll('.s-result-item[data-asin]').length;
+  const done  = document.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]').length;
+  el.textContent = `${done}/${total} ASINs`;
 }
 
 // Trích SKU từ inline scripts của product page (giống cách search results làm)
