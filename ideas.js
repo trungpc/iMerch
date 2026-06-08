@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupImageSettingsPanel();
     setupGenerateImagesButton();
     setupDownloadButton();
+    setupUploadDriveButton();
 
     // Nếu đã có analysis từ lần trước
     if (data.analysis) renderIdeas(data.analysis);
@@ -470,6 +471,11 @@ function updateGalleryItem(element, data, error) {
                         ${data.styleName ? `<span class="prompt-item-style">${escHtml(data.styleName)}</span>` : ''}
                     </div>
                     <div class="gallery-item-prompt">${escHtml(data.prompt || '')}</div>
+                    <div style="margin: 6px 0 2px;">
+                        <input type="text" class="gallery-item-title" value="${escHtml(data.audience || '')}"
+                            placeholder="Tiêu đề sản phẩm..."
+                            style="width:100%; box-sizing:border-box; padding:4px 7px; font-size:11px; border:1px solid rgba(167,139,250,0.3); border-radius:6px; background:rgba(255,255,255,0.05); color:#e2e8f0;">
+                    </div>
                     <div class="gallery-item-actions">
                         <a href="${url}" target="_blank">🔗 Mở ảnh</a>
                         <button class="individual-download-btn" data-url="${url}" style="margin-left: auto; background: none; border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">💾 Tải về</button>
@@ -513,6 +519,7 @@ function updateGalleryItem(element, data, error) {
 
         // Show bulk buttons
         document.getElementById('downloadSelectedBtn').style.display = 'flex';
+        document.getElementById('uploadDriveBtn').style.display = 'flex';
         const selectAllImagesBtn = document.getElementById('selectAllImagesBtn');
         selectAllImagesBtn.style.display = 'inline-block';
         const allChecked = Array.from(document.querySelectorAll('.gallery-checkbox')).every(cb => cb.checked);
@@ -542,6 +549,73 @@ function setupDownloadButton() {
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
         checkboxes.forEach(cb => { cb.checked = !allChecked; });
         selectAllImagesBtn.textContent = allChecked ? '☑️ Chọn tất cả' : '☐ Bỏ chọn tất cả';
+    });
+}
+
+function sanitizeFilename(str) {
+    return str.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function getFileExtension(url) {
+    try { const p = new URL(url).pathname; return p.split('.').pop().split('?')[0] || 'png'; } catch { return 'png'; }
+}
+
+function setupUploadDriveButton() {
+    const uploadBtn = document.getElementById('uploadDriveBtn');
+    const statusEl = document.getElementById('uploadStatus');
+    if (!uploadBtn) return;
+
+    uploadBtn.addEventListener('click', async () => {
+        const checked = document.querySelectorAll('.gallery-checkbox:checked');
+        if (checked.length === 0) { alert('Vui lòng chọn ít nhất 1 ảnh để tải lên Drive.'); return; }
+        if (!confirm(`Bạn có chắc chắn muốn tải ${checked.length} ảnh lên Google Drive và ghi vào Sheet?`)) return;
+
+        uploadBtn.disabled = true;
+        uploadBtn.querySelector('.btn-spinner').style.display = 'inline-block';
+        statusEl.style.display = 'inline-block';
+        statusEl.textContent = `⏳ Đang tải lên ${checked.length} ảnh...`;
+
+        const globalPrefix = document.getElementById('cfgFilename').value.trim();
+
+        const checkedArr = Array.from(checked);
+        const galleryElements = checkedArr.map(cb => cb.closest('.gallery-item'));
+        const items = checkedArr.map((cb, i) => {
+            const galleryItem = galleryElements[i];
+            const colorValue = cb.dataset.color || '';
+            const colorSuffix = colorValue ? ` ${colorValue}` : '';
+            const numSuffix = checkedArr.length > 1 ? ` (${i + 1})` : '';
+            const ext = getFileExtension(cb.dataset.url) || 'png';
+            const isYouth = galleryItem?.querySelector('.youth-checkbox')?.checked || false;
+            const youthSuffix = isYouth ? '' : ' (adult)';
+            // Title: per-item input → fallback global prefix → fallback "Design"
+            const itemTitle = galleryItem?.querySelector('.gallery-item-title')?.value.trim() || globalPrefix || 'Design';
+            const sanitizedTitle = sanitizeFilename(itemTitle);
+            return {
+                imageUrl: cb.dataset.url,
+                filename: `${sanitizedTitle}${colorSuffix}${youthSuffix}${numSuffix}.${ext}`,
+                asin: '',
+                title: sanitizedTitle,
+                youth: isYouth ? 'Youth' : '',
+                color: colorValue
+            };
+        });
+
+        const response = await new Promise(resolve => {
+            chrome.runtime.sendMessage({ action: 'uploadAndLogToDriveBatch', items }, resolve);
+        });
+
+        uploadBtn.disabled = false;
+        uploadBtn.querySelector('.btn-spinner').style.display = 'none';
+
+        if (response && response.success) {
+            statusEl.textContent = `✅ Đã tải lên ${response.uploaded || checked.length} ảnh!`;
+            galleryElements.forEach(el => {
+                if (el) el.style.outline = '2px solid #10b981';
+            });
+        } else {
+            statusEl.textContent = `❌ Lỗi: ${response?.error || 'Unknown error'}`;
+        }
+        setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
     });
 }
 
