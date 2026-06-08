@@ -613,6 +613,10 @@ function setupObserver() {
   const observer = new MutationObserver(() => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
+      // Re-inject sort bar if it disappeared (e.g. after Amazon "Sort by" AJAX replace)
+      if (window.location.pathname === '/s' && !document.querySelector('#imerch-sort-bar')) {
+        trySortBarInject();
+      }
       const newProducts = document.querySelectorAll(".s-result-item:not(.amasort-processed)");
       if (newProducts.length > 0) {
         logger.log(`Detected ${newProducts.length} new products, triggering processing...`);
