@@ -63,7 +63,8 @@ const KEYS = [
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
   "ideasTrademarks", "ideasMaxProducts", "ideasGeminiModel", "ideasOpenaiModel",
-  "ideasDriveFolderId", "ideasSheetId", "ideasSheetNames"
+  "ideasDriveFolderId", "ideasSheetId", "ideasSheetNames", "ideasDriveFolderNote",
+  "driveFolderNote"
 ];
 
 const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
@@ -530,7 +531,9 @@ merry christmas from heaven`;
   if (ideasGeminiEl) ideasGeminiEl.value = result.ideasGeminiModel || "gemini-2.5-flash";
   const ideasOpenaiEl = document.getElementById("ideasOpenaiModel");
   if (ideasOpenaiEl) ideasOpenaiEl.value = result.ideasOpenaiModel || "gpt-4.1";
+  setVal("driveFolderNote", result.driveFolderNote);
   setVal("ideasDriveFolderId", result.ideasDriveFolderId);
+  setVal("ideasDriveFolderNote", result.ideasDriveFolderNote);
   setVal("ideasSheetId", result.ideasSheetId);
   setVal("ideasSheetNames", result.ideasSheetNames);
   const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
@@ -700,7 +703,9 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
     ideasGeminiModel: document.getElementById("ideasGeminiModel")?.value || "gemini-2.5-flash",
     ideasOpenaiModel: document.getElementById("ideasOpenaiModel")?.value || "gpt-4.1",
+    driveFolderNote: getVal("driveFolderNote"),
     ideasDriveFolderId: getVal("ideasDriveFolderId"),
+    ideasDriveFolderNote: getVal("ideasDriveFolderNote"),
     ideasSheetId: getVal("ideasSheetId"),
     ideasSheetNames: getVal("ideasSheetNames"),
   };
