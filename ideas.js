@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('pageSubtitle').textContent = data.pageTitle || 'Amazon Listing';
     document.getElementById('thumbCount').textContent = `${products.length} sản phẩm`;
 
+    // Apply thumbnail size from settings
+    chrome.storage.sync.get('ideasThumbSize', r => {
+        const size = r.ideasThumbSize || 130;
+        document.documentElement.style.setProperty('--thumb-size', `${size}px`);
+    });
+
     renderThumbnails();
 
     // Pre-fill system prompt textarea

@@ -62,7 +62,7 @@ const KEYS = [
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
-  "ideasTrademarks", "ideasMaxProducts", "ideasGeminiModel", "ideasOpenaiModel",
+  "ideasTrademarks", "ideasMaxProducts", "ideasThumbSize", "ideasGeminiModel", "ideasOpenaiModel",
   "ideasDriveFolderId", "ideasSheetId", "ideasSheetNames", "ideasDriveFolderNote",
   "driveFolderNote"
 ];
@@ -527,6 +527,7 @@ gun & rose
 harley davidson
 merry christmas from heaven`;
   document.getElementById("ideasMaxProducts").value = result.ideasMaxProducts ?? 12;
+  document.getElementById("ideasThumbSize").value = result.ideasThumbSize ?? 130;
   const ideasGeminiEl = document.getElementById("ideasGeminiModel");
   if (ideasGeminiEl) ideasGeminiEl.value = result.ideasGeminiModel || "gemini-2.5-flash";
   const ideasOpenaiEl = document.getElementById("ideasOpenaiModel");
@@ -747,6 +748,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
     ideasTrademarks: document.getElementById("ideasTrademarks")?.value.trim() || "",
     ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
+    ideasThumbSize: parseInt(document.getElementById("ideasThumbSize")?.value) || 130,
     ideasGeminiModel: document.getElementById("ideasGeminiModel")?.value || "gemini-2.5-flash",
     ideasOpenaiModel: document.getElementById("ideasOpenaiModel")?.value || "gpt-4.1",
     driveFolderNote: getVal("driveFolderNote"),
