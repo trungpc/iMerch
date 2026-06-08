@@ -829,6 +829,7 @@ function injectSortBar() {
   bar.id = 'imerch-sort-bar';
   bar.style.cssText = 'display:flex; align-items:center; gap:3px; white-space:nowrap;';
   bar.innerHTML = `
+    <span id="imerch-asin-count" style="font-size:10px;color:#888;margin-right:2px;"></span>
     <button id="imerch-btn-ideas" style="${btn}" title="Generate design ideas from top products">💡 Ideas</button>
     <button id="imerch-btn-rank" style="${btn}" title="Sort by BSR (low → high)">📊 Rank</button>
     <button id="imerch-btn-date" style="${btn}" title="Sort by Date (newest first)">📅 Date</button>
@@ -839,7 +840,6 @@ function injectSortBar() {
     <button id="imerch-btn-load5" style="${loadBtn}" title="Load 5 more pages">+5</button>
     <button id="imerch-btn-load10" style="${loadBtn}" title="Load 10 more pages">+10</button>
     <span id="imerch-load-status" style="font-size:10px;color:#888;"></span>
-    <span id="imerch-asin-count" style="font-size:10px;color:#888;margin-left:2px;"></span>
   `;
 
   if (colInner && breadcrumbCol) {
