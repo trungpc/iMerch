@@ -150,7 +150,7 @@ function renderIdeas(text) {
         html += `<div class="idea-card">
             <div class="idea-row-header">
                 <span class="idea-num">${i + 1}</span>
-                <span class="idea-title">${escHtml(idea.title || '')}</span>
+                <span class="idea-title${(idea.title || '').length > 60 ? ' title-too-long' : ''}" title="${(idea.title || '').length > 60 ? `⚠️ ${(idea.title||'').length} ký tự (vượt quá 60)` : ''}">${escHtml(idea.title || '')}</span>
                 <div class="idea-meta">
                     ${idea.audience ? `<span class="idea-tag tag-audience">👥 ${escHtml(idea.audience)}</span>` : ''}
                     ${idea.style ? `<span class="idea-tag tag-style">🎨 ${escHtml(idea.style)}</span>` : ''}
@@ -480,7 +480,7 @@ function updateGalleryItem(element, data, error) {
                     </div>
                     <div class="gallery-item-prompt">${escHtml(data.prompt || '')}</div>
                     <div style="margin: 6px 0 2px;">
-                        <input type="text" class="gallery-item-title" value="${escHtml(data.audience || '')}"
+                        <input type="text" class="gallery-item-title${(data.audience || '').length > 60 ? ' title-too-long' : ''}" value="${escHtml(data.audience || '')}"
                             placeholder="Tiêu đề sản phẩm..."
                             style="width:100%; box-sizing:border-box; padding:4px 7px; font-size:11px; border:1px solid rgba(167,139,250,0.3); border-radius:6px; background:rgba(255,255,255,0.05); color:#e2e8f0;">
                     </div>
@@ -511,6 +511,12 @@ function updateGalleryItem(element, data, error) {
                     previewContainer.className = 'gallery-item-image ' + dot.dataset.class;
                     checkbox.dataset.color = dot.dataset.color;
                 });
+            });
+
+            const titleInput = newDiv.querySelector('.gallery-item-title');
+            titleInput.addEventListener('input', () => {
+                titleInput.classList.toggle('title-too-long', titleInput.value.length > 60);
+                titleInput.title = titleInput.value.length > 60 ? `⚠️ ${titleInput.value.length} ký tự (vượt quá 60)` : '';
             });
 
             newDiv.querySelector('.individual-download-btn').addEventListener('click', (e) => {
