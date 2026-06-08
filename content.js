@@ -880,7 +880,7 @@ function updateAsinCount() {
   if (!el) return;
   const total = document.querySelectorAll('.s-result-item[data-asin]').length;
   const done  = document.querySelectorAll('.s-result-item[data-asin][data-imerch-rank]').length;
-  el.textContent = `${done}/${total}`;
+  el.textContent = `${done}/${total} products`;
 }
 
 // Trích SKU từ inline scripts của product page (giống cách search results làm)
