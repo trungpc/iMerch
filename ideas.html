@@ -806,8 +806,8 @@
         <div class="card">
             <div class="card-header">
                 <h2>📸 Input Products</h2>
-                <span class="badge" id="thumbCount">0 sản phẩm</span>
-                <span style="font-size:12px;color:#6b7280;margin-left:auto;">Click để loại trừ khỏi phân tích</span>
+                <span class="badge" id="thumbCount">0 products</span>
+                <span style="font-size:12px;color:#6b7280;margin-left:auto;">Click to exclude from analysis</span>
             </div>
             <div class="card-body">
                 <div class="thumbnail-grid" id="thumbnailGrid"></div>
@@ -818,7 +818,7 @@
         <div class="card">
             <div class="card-header">
                 <h2>🤖 AI Prompt</h2>
-                <button class="reset-prompt-btn" id="resetPromptBtn" title="Khôi phục prompt mặc định">↺ Reset</button>
+                <button class="reset-prompt-btn" id="resetPromptBtn" title="Restore default prompt">↺ Reset</button>
             </div>
             <div class="card-body">
                 <div class="prompt-area">
@@ -841,7 +841,7 @@
             <div class="card-body" id="ideasOutput">
                 <div class="empty-state">
                     <div class="emoji">✨</div>
-                    <div>Bấm <strong>Generate Ideas</strong> để AI phân tích và tạo ý tưởng thiết kế mới</div>
+                    <div>Click <strong>Generate Ideas</strong> to analyze and create new design ideas</div>
                 </div>
             </div>
 
@@ -853,8 +853,8 @@
                 </div>
                 <ul class="prompt-list" id="promptList"></ul>
                 <div class="extracted-footer">
-                    <button class="select-all-btn" id="selectAllBtn">☑️ Chọn tất cả</button>
-                    <span class="selected-info" id="selectedInfo">0 / 0 đã chọn</span>
+                    <button class="select-all-btn" id="selectAllBtn">☑️ Select all</button>
+                    <span class="selected-info" id="selectedInfo">0 / 0 selected</span>
                 </div>
             </div>
 
@@ -873,10 +873,10 @@
                     <div class="config-field">
                         <label for="cfgSpeed">Rendering Speed</label>
                         <select id="cfgSpeed">
-                            <option value="TURBO" selected>Turbo (nhanh)</option>
-                            <option value="FLASH">Flash (rất nhanh)</option>
+                            <option value="TURBO" selected>Turbo (fast)</option>
+                            <option value="FLASH">Flash (fastest)</option>
                             <option value="DEFAULT">Default</option>
-                            <option value="QUALITY">Quality (chất lượng)</option>
+                            <option value="QUALITY">Quality (best)</option>
                         </select>
                     </div>
                     <div class="config-field">
@@ -906,13 +906,13 @@
                         </select>
                     </div>
                     <div class="config-field">
-                        <label for="cfgNum">Số ảnh / prompt</label>
+                        <label for="cfgNum">Images / prompt</label>
                         <input type="number" id="cfgNum" value="1" min="1" max="8">
                     </div>
                     <div class="config-field full-width">
                         <label for="cfgNegative">Negative Prompt</label>
                         <div style="display:flex; gap:8px; align-items:center;">
-                            <input type="text" id="cfgNegative" placeholder="Mô tả những gì không muốn xuất hiện trong ảnh..." style="flex:1;">
+                            <input type="text" id="cfgNegative" placeholder="Describe what you don't want in the image..." style="flex:1;">
                             <button class="generate-btn" id="generateImagesBtn" style="flex-shrink:0; padding:8px 16px; font-size:12px; white-space:nowrap;">
                                 <span class="btn-text">🎨 Generate Images</span>
                                 <span class="btn-spinner"></span>
@@ -944,9 +944,9 @@
                         <div class="config-field">
                             <label for="cfgGptQuality">Quality</label>
                             <select id="cfgGptQuality">
-                                <option value="low">Low (nháp)</option>
-                                <option value="medium" selected>Medium (khuyến nghị)</option>
-                                <option value="high">High (tốt nhất)</option>
+                                <option value="low">Low (draft)</option>
+                                <option value="medium" selected>Medium (recommended)</option>
+                                <option value="high">High (best)</option>
                                 <option value="auto">Auto</option>
                             </select>
                         </div>
@@ -962,26 +962,26 @@
                         <div class="config-field">
                             <label for="cfgGptModeration">Moderation</label>
                             <select id="cfgGptModeration">
-                                <option value="low" selected>Low (ít bị chặn)</option>
-                                <option value="auto">Auto (mặc định)</option>
+                                <option value="low" selected>Low (less restricted)</option>
+                                <option value="auto">Auto (default)</option>
                             </select>
                         </div>
                         <div class="config-field">
-                            <label for="cfgGptNum">Số ảnh / prompt</label>
+                            <label for="cfgGptNum">Images / prompt</label>
                             <input type="number" id="cfgGptNum" value="1" min="1" max="10">
                         </div>
                         <div class="config-field">
                             <label for="cfgGptBackground">Background</label>
                             <select id="cfgGptBackground">
-                                <option value="auto" selected>Auto (model tự chọn)</option>
-                                <option value="opaque">Opaque (nền đặc)</option>
-                                <option value="transparent">Transparent (thử nghiệm)</option>
+                                <option value="auto" selected>Auto</option>
+                                <option value="opaque">Opaque</option>
+                                <option value="transparent">Transparent (experimental)</option>
                             </select>
                         </div>
                         <div class="config-field">
-                            <label for="cfgGptRemoveBg">Xóa nền</label>
+                            <label for="cfgGptRemoveBg">Remove Background</label>
                             <select id="cfgGptRemoveBg">
-                                <option value="">Tắt</option>
+                                <option value="">Off</option>
                                 <option value="ideogram">Ideogram Remove Background</option>
                             </select>
                         </div>
@@ -1020,7 +1020,7 @@
                             <select id="cfgRespBackground">
                                 <option value="auto" selected>Auto</option>
                                 <option value="opaque">Opaque</option>
-                                <option value="transparent">Transparent (thử nghiệm)</option>
+                                <option value="transparent">Transparent (experimental)</option>
                             </select>
                         </div>
                     </div>
@@ -1034,8 +1034,8 @@
                     <h3>🖼️ Generated Images</h3>
                     <span class="gallery-progress" id="galleryProgress" style="margin-left: 10px;"></span>
                     <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
-                        <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Chọn tất cả Youth</button>
-                        <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Bỏ chọn tất cả</button>
+                        <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Select all Youth</button>
+                        <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Deselect all</button>
                     </div>
                 </div>
                 <div class="gallery-grid" id="galleryGrid"></div>
@@ -1043,7 +1043,7 @@
                     <input type="hidden" id="cfgFilename">
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button id="downloadSelectedBtn" class="regen-btn" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 11px; padding: 6px 12px; display: none;">
-                            ⬇️ Tải ảnh đã chọn
+                            ⬇️ Download selected
                         </button>
                         <select id="uploadSheetSelect" style="display:none; font-size:11px; padding:5px 8px; border:1px solid rgba(59,130,246,0.4); border-radius:6px; background:rgba(30,27,75,0.8); color:#e2e8f0; cursor:pointer;"></select>
                         <button id="uploadDriveBtn" class="regen-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); font-size: 11px; padding: 6px 12px; display: none;">
