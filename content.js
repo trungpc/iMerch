@@ -839,7 +839,7 @@ function injectSortBar() {
     <button id="imerch-btn-load5" style="${loadBtn}" title="Load 5 more pages">+5</button>
     <button id="imerch-btn-load10" style="${loadBtn}" title="Load 10 more pages">+10</button>
     <span id="imerch-load-status" style="font-size:10px;color:#888;"></span>
-    <span id="imerch-asin-count" style="font-size:10px;color:#6d28d9;font-weight:600;margin-left:2px;"></span>
+    <span id="imerch-asin-count" style="font-size:10px;color:#888;margin-left:2px;"></span>
   `;
 
   if (colInner && breadcrumbCol) {
