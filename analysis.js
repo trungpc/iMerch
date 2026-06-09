@@ -159,11 +159,11 @@ function setupRegenButton() {
     regenBtn.addEventListener('click', () => {
         const newPrompt = document.getElementById('promptTextarea').value.trim();
         if (!newPrompt) {
-            alert('Vui lòng nhập prompt trước khi phân tích lại.');
+            alert('Please enter a prompt before re-analyzing.');
             return;
         }
         if (!currentImageUrl) {
-            alert('Không tìm thấy URL hình ảnh.');
+            alert('Image URL not found.');
             return;
         }
 
@@ -176,7 +176,7 @@ function setupRegenButton() {
         container.innerHTML = `
             <div class="loading-state">
                 <div class="loading-spinner"></div>
-                <div class="loading-text">Đang phân tích lại với prompt mới...</div>
+                <div class="loading-text">Re-analyzing with new prompt...</div>
             </div>
         `;
 
@@ -233,7 +233,7 @@ function setupSelectAllButton() {
             }
         });
 
-        selectAllBtn.textContent = allChecked ? '☑️ Chọn tất cả' : '☐ Bỏ chọn tất cả';
+        selectAllBtn.textContent = allChecked ? '☑️ Select all' : '☐ Deselect all';
         updateSelectedCount();
     });
 }
@@ -492,7 +492,7 @@ function renderExtractedPrompts() {
     });
 
     // Reset select all button
-    document.getElementById('selectAllBtn').textContent = '☑️ Chọn tất cả';
+    document.getElementById('selectAllBtn').textContent = '☑️ Select all';
     updateSelectedCount();
 
     // Show section + config panel
@@ -554,14 +554,14 @@ function setupManualPromptInput() {
 function updateSelectedCount() {
     const checkboxes = document.querySelectorAll('#promptList input[type="checkbox"]');
     const checked = document.querySelectorAll('#promptList input[type="checkbox"]:checked');
-    document.getElementById('selectedInfo').textContent = `${checked.length} / ${checkboxes.length} đã chọn`;
+    document.getElementById('selectedInfo').textContent = `${checked.length} / ${checkboxes.length} selected`;
 
     // Update select all button text
     const selectAllBtn = document.getElementById('selectAllBtn');
     if (checkboxes.length > 0 && checked.length === checkboxes.length) {
-        selectAllBtn.textContent = '☐ Bỏ chọn tất cả';
+        selectAllBtn.textContent = '☐ Deselect all';
     } else {
-        selectAllBtn.textContent = '☑️ Chọn tất cả';
+        selectAllBtn.textContent = '☑️ Select all';
     }
 }
 
@@ -586,7 +586,7 @@ function setupGenerateButton() {
     generateBtn.addEventListener('click', () => {
         const selected = getSelectedPrompts();
         if (selected.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 prompt để tạo ảnh.');
+            alert('Please select at least 1 prompt to generate images.');
             return;
         }
         const config = getImageGenConfig();
@@ -607,6 +607,8 @@ function setupImageProviderToggle() {
             currentImageProvider = btn.dataset.provider;
             document.getElementById('ideogramConfigFields').style.display = currentImageProvider === 'ideogram' ? 'grid' : 'none';
             document.getElementById('gptImageConfigFields').style.display = currentImageProvider === 'gpt-image-2' ? 'block' : 'none';
+            document.getElementById('chunkIdeogramWrap').style.display = currentImageProvider === 'ideogram' ? 'flex' : 'none';
+            document.getElementById('chunkGptWrap').style.display = currentImageProvider === 'gpt-image-2' ? 'flex' : 'none';
         });
     });
 
@@ -666,9 +668,9 @@ async function startImageGeneration(prompts, config) {
     // Hide bulk buttons
     document.getElementById('downloadSelectedBtn').style.display = 'none';
     document.getElementById('selectAllImagesBtn').style.display = 'none';
-    document.getElementById('selectAllImagesBtn').textContent = '☑️ Chọn tất cả';
+    document.getElementById('selectAllImagesBtn').textContent = '☑️ Select all';
     const _youthAllBtn = document.getElementById('selectAllYouthBtn');
-    if (_youthAllBtn) { _youthAllBtn.style.display = 'none'; _youthAllBtn.textContent = '☑️ Chọn tất cả Youth'; }
+    if (_youthAllBtn) { _youthAllBtn.style.display = 'none'; _youthAllBtn.textContent = '☑️ Select all Youth'; }
     const _autoEvalBtn = document.getElementById('autoEvaluateBtn');
     if (_autoEvalBtn) _autoEvalBtn.style.display = 'none';
 
@@ -686,7 +688,7 @@ async function startImageGeneration(prompts, config) {
             <div class="gallery-item-image">
                 <div class="item-loading">
                     <div class="item-spinner"></div>
-                    <div class="item-loading-text">Đang chờ...</div>
+                    <div class="item-loading-text">Waiting...</div>
                 </div>
             </div>
             <div class="gallery-item-info">
@@ -715,17 +717,19 @@ async function startImageGeneration(prompts, config) {
     // Scroll to gallery
     gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // GPT Image API rate limit: 5 images/min — chunk = 5 để dùng tối đa giới hạn
-    const chunkSize = config.provider === 'gpt-image-2' ? 5 : 10;
+    const defaultChunk = config.provider === 'gpt-image-2' ? 5 : 10;
+    const maxChunk = defaultChunk;
+    const inputId = config.provider === 'gpt-image-2' ? 'chunkSizeGpt' : 'chunkSizeIdeogram';
+    const chunkSize = Math.min(Math.max(1, parseInt(document.getElementById(inputId)?.value) || defaultChunk), maxChunk);
     let completed = 0;
-    progress.textContent = `0 / ${jobs.length} hoàn thành — đang xử lý tối đa ${chunkSize} yêu cầu cùng lúc...`;
+    progress.textContent = `0 / ${jobs.length} done — processing up to ${chunkSize} at a time...`;
     for (let i = 0; i < jobs.length; i += chunkSize) {
         const chunk = jobs.slice(i, i + chunkSize);
 
         const promises = chunk.map(async (job) => {
             // Update this item's loading text
             const loadingText = job.element.querySelector('.item-loading-text');
-            if (loadingText) loadingText.textContent = 'Đang tạo ảnh...';
+            if (loadingText) loadingText.textContent = 'Generating...';
 
             // Store initial state
             await chrome.storage.local.set({
@@ -758,13 +762,13 @@ async function startImageGeneration(prompts, config) {
             await waitForJob(job.jobId, job.element);
             
             completed++;
-            progress.textContent = `${completed} / ${jobs.length} hoàn thành...`;
+            progress.textContent = `${completed} / ${jobs.length} done...`;
         });
 
         await Promise.all(promises);
     }
 
-    progress.textContent = `${completed} / ${jobs.length} hoàn thành ✅`;
+    progress.textContent = `${completed} / ${jobs.length} done ✅`;
     generateBtn.classList.remove('loading');
     generateBtn.disabled = false;
 }
@@ -796,7 +800,7 @@ function waitForJob(jobId, element) {
                     resolve();
                 } else if (data.status === 'removing_bg') {
                     const loadingText = element.querySelector('.item-loading-text');
-                    if (loadingText) loadingText.textContent = 'Đang xóa nền...';
+                    if (loadingText) loadingText.textContent = 'Removing background...';
                 }
             });
         }, 1500);
@@ -838,8 +842,8 @@ function updateGalleryItem(element, data, error) {
                     </div>
                     <div class="gallery-item-prompt">${escapeHtml(data.prompt || '')}</div>
                     <div class="gallery-item-actions">
-                        <a href="${url}" target="_blank">🔗 Mở ảnh</a>
-                        <button class="individual-download-btn" data-url="${url}" style="margin-left: auto; background: none; border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">💾 Tải về</button>
+                        <a href="${url}" target="_blank">🔗 Open</a>
+                        <button class="individual-download-btn" data-url="${url}" style="margin-left: auto; background: none; border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">💾 Download</button>
                     </div>
                     <div class="color-selector">
                         <span class="color-label">Nền:</span>
@@ -901,7 +905,7 @@ function updateGalleryItem(element, data, error) {
             selectAllBtn.style.display = 'inline-block';
             // All images are checked by default, so show "Bỏ chọn tất cả"
             const allChecked = Array.from(document.querySelectorAll('.gallery-checkbox')).every(cb => cb.checked);
-            selectAllBtn.textContent = allChecked ? '☐ Bỏ chọn tất cả' : '☑️ Chọn tất cả';
+            selectAllBtn.textContent = allChecked ? '☐ Deselect all' : '☑️ Select all';
         }
         if (youthAllBtn) youthAllBtn.style.display = 'inline-block';
         const autoEvalBtn = document.getElementById('autoEvaluateBtn');
@@ -929,7 +933,7 @@ function restoreGeneratedImages(jobIds) {
                 <div class="gallery-item-image">
                     <div class="item-loading">
                         <div class="item-spinner"></div>
-                        <div class="item-loading-text">Đang tải lại...</div>
+                        <div class="item-loading-text">Reloading...</div>
                     </div>
                 </div>
                 <div class="gallery-item-info">
@@ -960,7 +964,7 @@ function setupDownloadSelectedButton() {
     downloadBtn.addEventListener('click', () => {
         const checked = document.querySelectorAll('.gallery-checkbox:checked');
         if (checked.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 ảnh để tải.');
+            alert('Please select at least 1 image to download.');
             return;
         }
  
@@ -985,7 +989,7 @@ function setupDownloadSelectedButton() {
             cb.checked = !allChecked;
         });
  
-        selectAllBtn.textContent = allChecked ? '☑️ Chọn tất cả' : '☐ Bỏ chọn tất cả';
+        selectAllBtn.textContent = allChecked ? '☑️ Select all' : '☐ Deselect all';
     });
 }
 
@@ -996,18 +1000,18 @@ function setupUploadDriveButton() {
     uploadBtn.addEventListener('click', async () => {
         const checked = document.querySelectorAll('.gallery-checkbox:checked');
         if (checked.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 ảnh để tải lên Drive.');
+            alert('Please select at least 1 image to upload to Drive.');
             return;
         }
 
-        if (!confirm(`Bạn có chắc chắn muốn tải ${checked.length} ảnh lên Google Drive và ghi vào Sheet?`)) {
+        if (!confirm(`Upload ${checked.length} image(s) to Google Drive and log to Sheet?`)) {
             return;
         }
 
         uploadBtn.disabled = true;
         uploadBtn.querySelector('.btn-spinner').style.display = 'inline-block';
         statusEl.style.display = 'inline-block';
-        statusEl.textContent = `⏳ Đang tải lên ${checked.length} ảnh...`;
+        statusEl.textContent = `⏳ Uploading ${checked.length} image(s)...`;
 
         const customTitle = document.getElementById('cfgFilename').value.trim() || currentTitle || "Design";
         const sanitizedTitle = sanitizeFilename(customTitle);
@@ -1063,7 +1067,7 @@ function setupSelectAllYouthButton() {
         const youthCheckboxes = document.querySelectorAll('.youth-checkbox');
         const allChecked = Array.from(youthCheckboxes).every(cb => cb.checked);
         youthCheckboxes.forEach(cb => { cb.checked = !allChecked; });
-        youthBtn.textContent = allChecked ? '☑️ Chọn tất cả Youth' : '☐ Bỏ chọn Youth';
+        youthBtn.textContent = allChecked ? '☑️ Select all Youth' : '☐ Deselect Youth';
     });
 }
 
@@ -1184,7 +1188,7 @@ function setupAutoEvaluateButton() {
  */
 async function downloadImages(items) {
     if (!chrome.downloads) {
-        alert("Tính năng tải về không khả dụng.");
+        alert("Download feature is not available.");
         return;
     }
 

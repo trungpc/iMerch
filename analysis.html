@@ -1077,17 +1077,29 @@
                 </div>
                 <ul class="prompt-list" id="promptList"></ul>
                 <div class="extracted-footer">
-                    <button class="select-all-btn" id="selectAllBtn">☑️ Chọn tất cả</button>
-                    <span class="selected-info" id="selectedInfo">0 / 0 đã chọn</span>
+                    <button class="select-all-btn" id="selectAllBtn">☑️ Select all</button>
+                    <span class="selected-info" id="selectedInfo">0 / 0 selected</span>
                 </div>
             </div>
             <!-- Image Gen Config Panel -->
             <div class="ideogram-config" id="ideogramConfig">
                 <div class="config-header">
                     <h3>⚙️ Image Settings</h3>
-                    <div class="provider-toggle" id="imageProviderToggle">
-                        <button class="provider-btn active" data-provider="ideogram">Ideogram</button>
-                        <button class="provider-btn" data-provider="gpt-image-2">GPT Image</button>
+                    <div style="display:flex; align-items:center; gap:14px; margin-left:auto;">
+                        <div id="chunkIdeogramWrap" style="display:flex; align-items:center; gap:6px;">
+                            <label style="font-size:11px; color:rgba(255,255,255,0.45); white-space:nowrap;">Ideogram chunk</label>
+                            <input type="number" id="chunkSizeIdeogram" value="10" min="1" max="10"
+                                style="width:50px; padding:4px 6px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:rgba(255,255,255,0.9); text-align:center; outline:none;">
+                        </div>
+                        <div id="chunkGptWrap" style="display:none; align-items:center; gap:6px;">
+                            <label style="font-size:11px; color:rgba(255,255,255,0.45); white-space:nowrap;">GPT chunk</label>
+                            <input type="number" id="chunkSizeGpt" value="5" min="1" max="5"
+                                style="width:50px; padding:4px 6px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:rgba(255,255,255,0.9); text-align:center; outline:none;">
+                        </div>
+                        <div class="provider-toggle" id="imageProviderToggle">
+                            <button class="provider-btn active" data-provider="ideogram">Ideogram</button>
+                            <button class="provider-btn" data-provider="gpt-image-2">GPT Image</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1096,10 +1108,10 @@
                     <div class="config-field">
                         <label for="cfgSpeed">Rendering Speed</label>
                         <select id="cfgSpeed">
-                            <option value="TURBO" selected>Turbo (nhanh)</option>
-                            <option value="FLASH">Flash (rất nhanh)</option>
+                            <option value="TURBO" selected>Turbo (fast)</option>
+                            <option value="FLASH">Flash (fastest)</option>
                             <option value="DEFAULT">Default</option>
-                            <option value="QUALITY">Quality (chất lượng)</option>
+                            <option value="QUALITY">Quality (best)</option>
                         </select>
                     </div>
                     <div class="config-field">
@@ -1129,12 +1141,12 @@
                         </select>
                     </div>
                     <div class="config-field">
-                        <label for="cfgNum">Số ảnh / prompt</label>
+                        <label for="cfgNum">Images / prompt</label>
                         <input type="number" id="cfgNum" value="1" min="1" max="8">
                     </div>
                     <div class="config-field full-width">
                         <label for="cfgNegative">Negative Prompt</label>
-                        <input type="text" id="cfgNegative" placeholder="Mô tả những gì không muốn xuất hiện trong ảnh...">
+                        <input type="text" id="cfgNegative" placeholder="Describe what you don't want in the image...">
                     </div>
                 </div>
 
@@ -1181,26 +1193,26 @@
                     <div class="config-field">
                         <label for="cfgGptModeration">Moderation</label>
                         <select id="cfgGptModeration">
-                            <option value="low" selected>Low (ít bị chặn)</option>
-                            <option value="auto">Auto (mặc định)</option>
+                            <option value="low" selected>Low (less restricted)</option>
+                            <option value="auto">Auto (default)</option>
                         </select>
                     </div>
                     <div class="config-field">
-                        <label for="cfgGptNum">Số ảnh / prompt</label>
+                        <label for="cfgGptNum">Images / prompt</label>
                         <input type="number" id="cfgGptNum" value="1" min="1" max="10">
                     </div>
                         <div class="config-field">
                             <label for="cfgGptBackground">Background</label>
                             <select id="cfgGptBackground">
-                                <option value="auto" selected>Auto (model tự chọn)</option>
-                                <option value="opaque">Opaque (nền đặc)</option>
-                                <option value="transparent">Transparent (thử nghiệm)</option>
+                                <option value="auto" selected>Auto</option>
+                                <option value="opaque">Opaque</option>
+                                <option value="transparent">Transparent (experimental)</option>
                             </select>
                         </div>
                         <div class="config-field">
-                            <label for="cfgGptRemoveBg">Xóa nền</label>
+                            <label for="cfgGptRemoveBg">Remove Background</label>
                             <select id="cfgGptRemoveBg">
-                                <option value="">Tắt</option>
+                                <option value="">Off</option>
                                 <option value="ideogram">Ideogram Remove Background</option>
                             </select>
                         </div>
@@ -1240,7 +1252,7 @@
                             <select id="cfgRespBackground">
                                 <option value="auto" selected>Auto</option>
                                 <option value="opaque">Opaque</option>
-                                <option value="transparent">Transparent (thử nghiệm)</option>
+                                <option value="transparent">Transparent (experimental)</option>
                             </select>
                         </div>
                     </div>
@@ -1263,19 +1275,19 @@
                             <span class="btn-spinner" style="width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;display:none;margin-right:5px;"></span>
                             <span class="btn-text">🔍 Auto Check</span>
                         </button>
-                        <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Chọn tất cả Youth</button>
-                        <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Bỏ chọn tất cả</button>
+                        <button id="selectAllYouthBtn" class="select-all-btn" style="display: none;">☑️ Select all Youth</button>
+                        <button id="selectAllImagesBtn" class="select-all-btn" style="display: none;">☐ Deselect all</button>
                     </div>
                 </div>
                 <div class="gallery-grid" id="galleryGrid"></div>
                 <div class="gallery-footer" style="padding: 16px 20px; background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.08);">
                     <div class="config-field full-width" style="margin-bottom: 12px;">
                         <label for="cfgFilename">Download Filename (Prefix) <span id="filenameCount" style="color: #a78bfa; font-weight: 600; margin-left: 5px; font-size: 10px; text-transform: none;">(0 characters)</span></label>
-                        <input type="text" id="cfgFilename" placeholder="Nhập tên file bạn muốn đặt...">
+                        <input type="text" id="cfgFilename" placeholder="Enter filename prefix...">
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button id="downloadSelectedBtn" class="regen-btn" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 11px; padding: 6px 12px; display: none;">
-                            ⬇️ Tải ảnh đã chọn
+                            ⬇️ Download selected
                         </button>
                         <button id="uploadDriveBtn" class="regen-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 11px; padding: 6px 12px; display: none;">
                             <span class="btn-spinner" style="width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; margin-right: 5px;"></span>

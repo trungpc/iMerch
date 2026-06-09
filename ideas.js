@@ -296,6 +296,8 @@ function setupImageSettingsPanel() {
             const provider = btn.dataset.provider;
             document.getElementById('ideogramConfigFields').style.display = provider === 'ideogram' ? '' : 'none';
             document.getElementById('gptImageConfigFields').style.display = provider === 'gpt-image-2' ? '' : 'none';
+            document.getElementById('chunkIdeogramWrap').style.display = provider === 'ideogram' ? 'flex' : 'none';
+            document.getElementById('chunkGptWrap').style.display = provider === 'gpt-image-2' ? 'flex' : 'none';
         });
     });
 
@@ -406,7 +408,10 @@ async function startImageGeneration(prompts, config) {
 
     gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    const chunkSize = config.provider === 'gpt-image-2' ? 5 : 10;
+    const defaultChunk = config.provider === 'gpt-image-2' ? 5 : 10;
+    const maxChunk = defaultChunk;
+    const inputId = config.provider === 'gpt-image-2' ? 'chunkSizeGpt' : 'chunkSizeIdeogram';
+    const chunkSize = Math.min(Math.max(1, parseInt(document.getElementById(inputId)?.value) || defaultChunk), maxChunk);
     let completed = 0;
     progress.textContent = `0 / ${jobs.length} done — processing up to ${chunkSize} at a time...`;
 
