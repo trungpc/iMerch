@@ -5,7 +5,7 @@ let currentAsin = "";
 let currentTitle = "";
 let extractedPrompts = []; // Stores all extracted prompt objects
 let maxFilenameLimit = 60; // Default limit for warning
-let currentDesignAnalysis = null; // Parsed JSON từ analysis (schema mới)
+let currentDesignAnalysis = null; // Parsed JSON from analysis (new schema)
 
 // Parse URL parameters to get stored analysis data
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,7 +84,7 @@ Trả lời theo cấu trúc JSON (không markdown, không giải thích):
         currentAsin = data.asin || "";
         currentTitle = data.title || "";
 
-        // Tự động điền Download Filename - Xóa hậu tố "T-Shirt"
+        // Auto-fill Download Filename — strip "T-Shirt" suffix
         let cleanTitle = currentTitle.replace(/\s*T-Shirt\s*$/i, "").trim();
         document.getElementById('cfgFilename').value = cleanTitle;
         updateFilenameCount();
@@ -92,7 +92,7 @@ Trả lời theo cấu trúc JSON (không markdown, không giải thích):
         // Display metadata
         const asinEl = document.getElementById('asinDisplay');
         if (currentAsin) {
-            asinEl.innerHTML = `<a href="https://www.amazon.com/dp/${currentAsin}" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;" title="Mở trang Amazon">${currentAsin}</a>`;
+            asinEl.innerHTML = `<a href="https://www.amazon.com/dp/${currentAsin}" target="_blank" style="color: inherit; text-decoration: none; cursor: pointer;" title="Open Amazon page">${currentAsin}</a>`;
             const galleryAsinLink = document.getElementById('galleryAsinLink');
             if (galleryAsinLink) {
                 galleryAsinLink.href = `https://www.amazon.com/dp/${currentAsin}`;
@@ -203,7 +203,7 @@ function setupRegenButton() {
             title: currentTitle
         }, () => {
             if (chrome.runtime.lastError) {
-                showError('Lỗi kết nối: ' + chrome.runtime.lastError.message);
+                showError('Connection error: ' + chrome.runtime.lastError.message);
                 regenBtn.classList.remove('loading');
                 regenBtn.disabled = false;
                 return;
@@ -271,13 +271,13 @@ function pollForResult(analysisId, onComplete) {
 function showAnalysis(text) {
     const container = document.getElementById('analysisContent');
 
-    // Thử parse JSON schema mới trước
+    // Try parsing new JSON schema first
     let parsed = null;
     const tryParseJson = (s) => { try { return JSON.parse(s.trim()); } catch (e) { return null; } };
     // 1. Strip code fence
     const stripped = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
     parsed = tryParseJson(stripped);
-    // 2. Fallback: tìm JSON object {...} bất kỳ trong text (AI đôi khi thêm text trước/sau)
+    // 2. Fallback: find any JSON object {...} in text (AI sometimes adds text before/after)
     if (!parsed) {
         const start = text.indexOf('{');
         const end = text.lastIndexOf('}');
@@ -357,7 +357,7 @@ function showError(message) {
         <div class="error-state">
             <div class="error-icon">⚠️</div>
             <strong>${message}</strong>
-            <p>Thử lại hoặc kiểm tra API key trong cài đặt.</p>
+            <p>Please retry or check your API key in Settings.</p>
         </div>
     `;
 }
@@ -375,10 +375,10 @@ function tryExtractPrompts(text) {
         try { return JSON.parse(s.trim()); } catch (e) { return null; }
     };
 
-    // 0. Schema mới: JSON object với field "prompts" (lowercase)
+    // 0. New schema: JSON object with "prompts" field (lowercase)
     const stripped0 = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```\s*$/m, '');
     let fullParsed = tryParse(stripped0);
-    // Fallback: tìm JSON object {...} bất kỳ trong text
+    // Fallback: find any JSON object {...} in text
     if (!fullParsed) {
         const s = text.indexOf('{'), e = text.lastIndexOf('}');
         if (s !== -1 && e > s) fullParsed = tryParse(text.slice(s, e + 1));
@@ -396,7 +396,7 @@ function tryExtractPrompts(text) {
         jsonData = tryParse(stripped);
     }
 
-    // 3. Tìm từ '[{' cuối cùng — JSON array luôn ở cuối response
+    // 3. Find last '[{' — JSON array is always at end of response
     if (!jsonData) {
         let idx = text.lastIndexOf('[{');
         while (idx !== -1) {
@@ -406,11 +406,11 @@ function tryExtractPrompts(text) {
         }
     }
 
-    // 4. Fallback: bracket-matching để tìm JSON array hợp lệ đầu tiên từ cuối
+    // 4. Fallback: bracket-matching to find first valid JSON array from end
     if (!jsonData) {
         for (let i = text.length - 1; i >= 0; i--) {
             if (text[i] !== ']') continue;
-            // Tìm [ mở tương ứng
+            // Find matching opening [
             let depth = 0, inStr = false;
             for (let j = i; j >= 0; j--) {
                 const c = text[j];
@@ -783,7 +783,7 @@ function waitForJob(jobId, element) {
                 if (!data) {
                     clearInterval(interval);
                     clearTimeout(timeoutId);
-                    updateGalleryItem(element, null, 'Dữ liệu bị mất');
+                    updateGalleryItem(element, null, 'Data lost');
                     resolve();
                     return;
                 }
@@ -805,10 +805,10 @@ function waitForJob(jobId, element) {
             });
         }, 1500);
 
-        // 12 phút — đủ cho GPT Image với retry 429 (mỗi lần chờ 65s)
+        // 12 minutes — enough for GPT Image with 429 retry (65s wait each)
         timeoutId = setTimeout(() => {
             clearInterval(interval);
-            updateGalleryItem(element, null, 'Timeout — quá 12 phút (Chưa nhận được phản hồi từ server)');
+            updateGalleryItem(element, null, 'Timeout — exceeded 12 minutes (no response from server)');
             resolve();
         }, 720000);
     });
@@ -846,10 +846,10 @@ function updateGalleryItem(element, data, error) {
                         <button class="individual-download-btn" data-url="${url}" style="margin-left: auto; background: none; border: 1px solid rgba(167, 139, 250, 0.3); color: #a78bfa; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 11px;">💾 Download</button>
                     </div>
                     <div class="color-selector">
-                        <span class="color-label">Nền:</span>
-                        <div class="color-dot dot-black active" data-color="" data-class="preview-black" title="Đen (mặc định)"></div>
-                        <div class="color-dot dot-grey" data-color="(grey)" data-class="preview-grey" title="Xám (+grey)"></div>
-                        <div class="color-dot dot-white" data-color="(light)" data-class="preview-white" title="Trắng (+light)"></div>
+                        <span class="color-label">BG:</span>
+                        <div class="color-dot dot-black active" data-color="" data-class="preview-black" title="Black (default)"></div>
+                        <div class="color-dot dot-grey" data-color="(grey)" data-class="preview-grey" title="Grey (+grey)"></div>
+                        <div class="color-dot dot-white" data-color="(light)" data-class="preview-white" title="White (+light)"></div>
                         
                         <label class="youth-toggle" style="margin-left: auto; display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; color: rgba(255,255,255,0.7);">
                             <input type="checkbox" class="youth-checkbox" style="width: 14px; height: 14px; accent-color: #a78bfa; cursor: pointer;">
@@ -903,7 +903,7 @@ function updateGalleryItem(element, data, error) {
         if (uploadBtn) uploadBtn.style.display = 'flex';
         if (selectAllBtn) {
             selectAllBtn.style.display = 'inline-block';
-            // All images are checked by default, so show "Bỏ chọn tất cả"
+            // All images are checked by default, so show "Deselect all"
             const allChecked = Array.from(document.querySelectorAll('.gallery-checkbox')).every(cb => cb.checked);
             selectAllBtn.textContent = allChecked ? '☐ Deselect all' : '☑️ Select all';
         }
