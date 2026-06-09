@@ -344,8 +344,8 @@
           <input type="text" id="driveFolderId" placeholder="Google Drive Folder ID">
         </div>
         <div class="field">
-          <label>Ghi chú Folder</label>
-          <input type="text" id="driveFolderNote" placeholder="Ví dụ: Drive cá nhân / Shared với team...">
+          <label>Folder Note</label>
+          <input type="text" id="driveFolderNote" placeholder="e.g. Personal Drive / Shared with team...">
         </div>
       </div>
       <div class="grid-2">
@@ -367,7 +367,7 @@
     <div class="card-body">
       <div class="grid-2">
         <div class="field">
-          <label>Số lượng thumbnail tối đa đưa vào Ideas</label>
+          <label>Max thumbnails for Ideas</label>
           <input type="number" id="ideasMaxProducts" value="12" min="1" max="50">
         </div>
         <div class="field">
@@ -376,70 +376,44 @@
         </div>
       </div>
       <div class="field">
-        <label>Gemini Model (Ideas)</label>
-        <div style="display:flex;gap:6px;align-items:center;">
-        <select id="ideasGeminiModel" style="flex:1;">
-          <optgroup label="Gemini 3 (latest)">
-            <option value="gemini-3.5-flash">gemini-3.5-flash</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
-            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
-          </optgroup>
-          <optgroup label="Gemini 2.5">
-            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-            <option value="gemini-2.5-flash" selected>gemini-2.5-flash (default)</option>
-            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-          </optgroup>
-        </select>
-        <button class="refresh-btn" id="refreshIdeasGeminiModels" title="Fetch models from API">🔄</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>OpenAI Model (Ideas)</label>
-        <div style="display:flex;gap:6px;align-items:center;">
-        <select id="ideasOpenaiModel" style="flex:1;">
-          <optgroup label="GPT-5">
-            <option value="gpt-5.5">gpt-5.5</option>
-            <option value="gpt-5.4">gpt-5.4</option>
-            <option value="gpt-5.4-mini">gpt-5.4-mini</option>
-          </optgroup>
-          <optgroup label="GPT-4.1">
-            <option value="gpt-4.1" selected>gpt-4.1 (default)</option>
-            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-            <option value="gpt-4.1-nano">gpt-4.1-nano</option>
-          </optgroup>
-          <optgroup label="GPT-4o">
-            <option value="gpt-4o">gpt-4o</option>
-            <option value="gpt-4o-mini">gpt-4o-mini</option>
-          </optgroup>
-        </select>
-        <button class="refresh-btn" id="refreshIdeasOpenaiModels" title="Fetch models from API">🔄</button>
+        <label>Model (leave empty to use analysis model)</label>
+        <div class="select-with-refresh">
+          <select id="ideasModel">
+            <option value="">— Use analysis model —</option>
+          </select>
+          <button class="refresh-btn" id="refreshIdeasModels" title="Fetch models from API">🔄</button>
         </div>
       </div>
       <div class="grid-2">
         <div class="field">
           <label>Google Drive Folder ID (Ideas)</label>
-          <input type="text" id="ideasDriveFolderId" placeholder="Google Drive Folder ID dành riêng cho Ideas">
+          <input type="text" id="ideasDriveFolderId" placeholder="Google Drive Folder ID for Ideas">
         </div>
         <div class="field">
-          <label>Ghi chú Folder (Ideas)</label>
-          <input type="text" id="ideasDriveFolderNote" placeholder="Ví dụ: Folder Ideas tháng 6...">
+          <label>Folder Note (Ideas)</label>
+          <input type="text" id="ideasDriveFolderNote" placeholder="e.g. Ideas folder June...">
         </div>
       </div>
       <div class="grid-2">
         <div class="field">
           <label>Google Sheet ID (Ideas)</label>
-          <input type="text" id="ideasSheetId" placeholder="Sheet ID dành riêng cho Ideas">
+          <input type="text" id="ideasSheetId" placeholder="Sheet ID for Ideas">
         </div>
         <div class="field">
           <label>Sheet Names (Ideas)</label>
           <input type="text" id="ideasSheetNames" placeholder="Sheet1, Sheet2, Sheet3">
-          <small style="color:#888;">Nhiều sheet cách nhau bằng dấu phẩy. Khi upload sẽ hỏi chọn sheet.</small>
+          <small style="color:#888;">Multiple sheet names separated by commas. You'll choose a sheet before uploading.</small>
         </div>
       </div>
       <div class="field">
-        <label>Trademark Keywords (mỗi dòng 1 từ/regex, không phân biệt hoa thường)</label>
+        <label>Title Cleanup Words (comma-separated, case-insensitive)</label>
+        <input type="text" id="ideasTitleCleanup" placeholder="e.g. T-Shirt, Tee, Shirt, Top, Apparel, Clothing, Gift, Funny">
+        <small style="color:#888;">These words will be stripped from product titles before use as Ideas input.</small>
+      </div>
+      <div class="field">
+        <label>Trademark Keywords (one per line, case-insensitive, regex supported)</label>
         <textarea id="ideasTrademarks" placeholder="Disney&#10;Marvel&#10;NFL&#10;NBA&#10;Harry Potter" style="min-height:120px;font-family:monospace;font-size:12px;"></textarea>
-        <small style="color:#888;">Sản phẩm có brand/title/bullet chứa bất kỳ keyword nào sẽ bị loại trước khi gửi thumbnail lên AI.</small>
+        <small style="color:#888;">Products whose brand/title/bullet matches any keyword will be excluded before sending thumbnails to AI.</small>
       </div>
     </div>
   </div>
@@ -487,22 +461,22 @@
       </div>
       <div class="grid-2">
         <div class="field">
-          <label>Chiều rộng tối thiểu (px)</label>
+          <label>Minimum Width (px)</label>
           <input type="number" id="hoverMinWidth" value="300" min="50" max="2000" placeholder="300">
         </div>
         <div class="field">
-          <label>Vị trí nút</label>
+          <label>Button Position</label>
           <select id="hoverBtnPosition">
-            <option value="top-right">Góc trên phải</option>
-            <option value="top-left">Góc trên trái</option>
-            <option value="bottom-right">Góc dưới phải</option>
-            <option value="bottom-left">Góc dưới trái</option>
-            <option value="center">Giữa ảnh</option>
+            <option value="top-right">Top right</option>
+            <option value="top-left">Top left</option>
+            <option value="bottom-right">Bottom right</option>
+            <option value="bottom-left">Bottom left</option>
+            <option value="center">Center</option>
           </select>
         </div>
       </div>
       <div class="field">
-        <label>Danh sách domain bỏ qua (mỗi dòng 1 domain, ví dụ: google.com)</label>
+        <label>Domain Blacklist (one per line, e.g. google.com)</label>
         <textarea id="hoverBlacklist" placeholder="google.com&#10;facebook.com&#10;twitter.com" style="min-height:80px;"></textarea>
       </div>
     </div>

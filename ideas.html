@@ -257,13 +257,15 @@
         /* Dòng 2: description */
         .idea-row-desc {
             padding: 7px 14px;
-            font-size: 12px;
-            color: #9ca3af;
-            line-height: 1.5;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        .idea-row-desc-inner {
+            font-size: 11px;
+            color: #c4b5fd;
+            line-height: 1.5;
+        }
 
-        /* Dòng 3: prompt */
+        /* Dòng 3: prompt — plain style (xám) */
         .idea-row-prompt {
             display: flex;
             align-items: flex-start;
@@ -272,8 +274,8 @@
         }
         .idea-prompt-text {
             flex: 1;
-            font-size: 11px;
-            color: #c4b5fd;
+            font-size: 12px;
+            color: #9ca3af;
             line-height: 1.5;
         }
         .idea-title {
@@ -302,8 +304,7 @@
         }
         .tag-audience { background: rgba(251,191,36,0.15); color: #fbbf24; }
         .tag-style { background: rgba(34,211,238,0.12); color: #22d3ee; }
-        .idea-description { font-size: 12px; color: #9ca3af; line-height: 1.6; }
-        .idea-prompt {
+        .idea-description {
             background: rgba(0,0,0,0.25);
             border-radius: 8px;
             padding: 10px 12px;
@@ -312,6 +313,8 @@
             line-height: 1.6;
             flex: 1;
         }
+        .idea-description-label { font-size: 10px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .idea-prompt { font-size: 12px; color: #9ca3af; line-height: 1.6; }
         .idea-prompt-label { font-size: 10px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
         .copy-prompt-btn {
             align-self: flex-end;
@@ -833,10 +836,15 @@
             <div class="card-header">
                 <h2>🎨 Generated Ideas</h2>
                 <span class="badge" id="ideasCount" style="display:none;"></span>
-                <button class="ideas-generate-btn" id="generateIdeasBtn" style="margin-left: auto;">
-                    <span class="btn-text">✨ Generate Ideas</span>
-                    <span class="btn-spinner"></span>
-                </button>
+                <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                    <label style="font-size:11px; color:rgba(255,255,255,0.45); white-space:nowrap;">Ideas count</label>
+                    <input type="number" id="ideasCountInput" value="5" min="1" max="20"
+                        style="width:54px; padding:5px 8px; font-size:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:rgba(255,255,255,0.9); text-align:center; outline:none;">
+                    <button class="ideas-generate-btn" id="generateIdeasBtn">
+                        <span class="btn-text">✨ Generate Ideas</span>
+                        <span class="btn-spinner"></span>
+                    </button>
+                </div>
             </div>
             <div class="card-body" id="ideasOutput">
                 <div class="empty-state">
@@ -911,13 +919,7 @@
                     </div>
                     <div class="config-field full-width">
                         <label for="cfgNegative">Negative Prompt</label>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <input type="text" id="cfgNegative" placeholder="Describe what you don't want in the image..." style="flex:1;">
-                            <button class="generate-btn" id="generateImagesBtn" style="flex-shrink:0; padding:8px 16px; font-size:12px; white-space:nowrap;">
-                                <span class="btn-text">🎨 Generate Images</span>
-                                <span class="btn-spinner"></span>
-                            </button>
-                        </div>
+                        <input type="text" id="cfgNegative" placeholder="Describe what you don't want in the image..." style="width:100%;">
                     </div>
                 </div>
 
@@ -1024,6 +1026,13 @@
                             </select>
                         </div>
                     </div>
+                </div>
+
+                <div style="display:flex; justify-content:center; padding: 16px 0 20px;">
+                    <button class="generate-btn" id="generateImagesBtn">
+                        <span class="btn-text">🎨 Generate Images</span>
+                        <span class="btn-spinner"></span>
+                    </button>
                 </div>
 
             </div>

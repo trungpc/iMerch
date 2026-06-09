@@ -62,7 +62,7 @@ const KEYS = [
   "colAsinHeader", "colTitleHeader", "colUrlHeader", "colYouthHeader", "colColorsHeader",
   "maxFilenameLength",
   "hoverEnabled", "hoverMinWidth", "hoverBtnPosition", "hoverBlacklist",
-  "ideasTrademarks", "ideasMaxProducts", "ideasThumbSize", "ideasGeminiModel", "ideasOpenaiModel",
+  "ideasTrademarks", "ideasTitleCleanup", "ideasMaxProducts", "ideasThumbSize", "ideasModel",
   "ideasDriveFolderId", "ideasSheetId", "ideasSheetNames", "ideasDriveFolderNote",
   "driveFolderNote"
 ];
@@ -528,15 +528,20 @@ harley davidson
 merry christmas from heaven`;
   document.getElementById("ideasMaxProducts").value = result.ideasMaxProducts ?? 12;
   document.getElementById("ideasThumbSize").value = result.ideasThumbSize ?? 6;
-  const ideasGeminiEl = document.getElementById("ideasGeminiModel");
-  if (ideasGeminiEl) ideasGeminiEl.value = result.ideasGeminiModel || "gemini-2.5-flash";
-  const ideasOpenaiEl = document.getElementById("ideasOpenaiModel");
-  if (ideasOpenaiEl) ideasOpenaiEl.value = result.ideasOpenaiModel || "gpt-4.1";
+  const ideasModelEl = document.getElementById("ideasModel");
+  if (ideasModelEl && result.ideasModel) {
+    const opt = document.createElement("option");
+    opt.value = result.ideasModel;
+    opt.textContent = result.ideasModel;
+    opt.selected = true;
+    ideasModelEl.appendChild(opt);
+  }
   setVal("driveFolderNote", result.driveFolderNote);
   setVal("ideasDriveFolderId", result.ideasDriveFolderId);
   setVal("ideasDriveFolderNote", result.ideasDriveFolderNote);
   setVal("ideasSheetId", result.ideasSheetId);
   setVal("ideasSheetNames", result.ideasSheetNames);
+  setVal("ideasTitleCleanup", result.ideasTitleCleanup);
   const savedTrademarks = result.ideasTrademarks || DEFAULT_TRADEMARKS;
   document.getElementById("ideasTrademarks").value = savedTrademarks;
   // Tự động lưu default vào storage nếu chưa có
@@ -669,51 +674,53 @@ document.getElementById("refreshGeminiModels").addEventListener("click", fetchGe
 document.getElementById("refreshOpenaiModels").addEventListener("click", fetchOpenAIModels);
 document.getElementById("refreshAutoCheckModels").addEventListener("click", fetchAutoCheckModels);
 
-document.getElementById("refreshIdeasGeminiModels").addEventListener("click", async () => {
-  const key = getVal("geminiKey");
-  if (!key) { showStatus("Enter Gemini API key first.", "error"); return; }
-  const btn = document.getElementById("refreshIdeasGeminiModels");
-  const select = document.getElementById("ideasGeminiModel");
+async function fetchIdeasModels() {
+  const btn = document.getElementById("refreshIdeasModels");
+  const select = document.getElementById("ideasModel");
   const current = select.value;
-  btn.classList.add("spinning"); btn.disabled = true;
+  btn.classList.add("spinning");
+  btn.disabled = true;
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=200`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const models = (data.models || [])
-      .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
-      .map(m => m.name.replace("models/", ""))
-      .filter(id => id.includes("gemini")).sort();
+    let models = [];
+    if (currentProvider === "openai") {
+      const key = getVal("openaiKey");
+      if (!key) throw new Error("Enter OpenAI API key first.");
+      const res = await fetch("https://api.openai.com/v1/models", {
+        headers: { "Authorization": `Bearer ${key}` }
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.data || [])
+        .map(m => m.id)
+        .filter(id => /^(gpt|o\d)/.test(id) && !id.includes("audio") && !id.includes("realtime") && !id.includes("instruct"))
+        .sort();
+    } else {
+      const key = getVal("geminiKey");
+      if (!key) throw new Error("Enter Gemini API key first.");
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}&pageSize=200`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      models = (data.models || [])
+        .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
+        .map(m => m.name.replace("models/", ""))
+        .filter(id => id.includes("gemini"))
+        .sort();
+    }
     if (!models.length) throw new Error("No models found.");
-    select.innerHTML = models.map(id => `<option value="${id}"${id === current ? " selected" : ""}>${id}</option>`).join("");
-    if (!models.includes(current) && models.length) select.value = models[0];
-    showStatus(`✅ Loaded ${models.length} Gemini models (Ideas).`);
-  } catch (e) { showStatus(`Gemini: ${e.message}`, "error"); }
-  finally { btn.classList.remove("spinning"); btn.disabled = false; }
-});
+    select.innerHTML = `<option value="">— Use analysis model —</option>` +
+      models.map(id => `<option value="${id}"${id === current ? " selected" : ""}>${id}</option>`).join("");
+    if (current && models.includes(current)) select.value = current;
+    showStatus(`✅ Loaded ${models.length} models for Ideas.`);
+  } catch (e) {
+    showStatus(e.message, "error");
+  } finally {
+    btn.classList.remove("spinning");
+    btn.disabled = false;
+  }
+}
 
-document.getElementById("refreshIdeasOpenaiModels").addEventListener("click", async () => {
-  const key = getVal("openaiKey");
-  if (!key) { showStatus("Enter OpenAI API key first.", "error"); return; }
-  const btn = document.getElementById("refreshIdeasOpenaiModels");
-  const select = document.getElementById("ideasOpenaiModel");
-  const current = select.value;
-  btn.classList.add("spinning"); btn.disabled = true;
-  try {
-    const res = await fetch("https://api.openai.com/v1/models", { headers: { "Authorization": `Bearer ${key}` } });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const models = (data.data || [])
-      .map(m => m.id)
-      .filter(id => /^(gpt|o\d)/.test(id) && !id.includes("audio") && !id.includes("realtime") && !id.includes("instruct"))
-      .sort();
-    if (!models.length) throw new Error("No models found.");
-    select.innerHTML = models.map(id => `<option value="${id}"${id === current ? " selected" : ""}>${id}</option>`).join("");
-    if (!models.includes(current) && models.length) select.value = models[0];
-    showStatus(`✅ Loaded ${models.length} OpenAI models (Ideas).`);
-  } catch (e) { showStatus(`OpenAI: ${e.message}`, "error"); }
-  finally { btn.classList.remove("spinning"); btn.disabled = false; }
-});
+document.getElementById("refreshIdeasModels").addEventListener("click", fetchIdeasModels);
+
 
 // Save
 document.getElementById("saveBtn").addEventListener("click", () => {
@@ -747,10 +754,10 @@ document.getElementById("saveBtn").addEventListener("click", () => {
     hoverBtnPosition: getVal("hoverBtnPosition") || "top-right",
     hoverBlacklist: document.getElementById("hoverBlacklist")?.value.trim() || "",
     ideasTrademarks: document.getElementById("ideasTrademarks")?.value.trim() || "",
+    ideasTitleCleanup: document.getElementById("ideasTitleCleanup")?.value.trim() || "",
     ideasMaxProducts: parseInt(document.getElementById("ideasMaxProducts")?.value) || 12,
     ideasThumbSize: parseInt(document.getElementById("ideasThumbSize")?.value) || 6,
-    ideasGeminiModel: document.getElementById("ideasGeminiModel")?.value || "gemini-2.5-flash",
-    ideasOpenaiModel: document.getElementById("ideasOpenaiModel")?.value || "gpt-4.1",
+    ideasModel: document.getElementById("ideasModel")?.value || "",
     driveFolderNote: getVal("driveFolderNote"),
     ideasDriveFolderId: getVal("ideasDriveFolderId"),
     ideasDriveFolderNote: getVal("ideasDriveFolderNote"),

@@ -852,10 +852,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "generateIdeas") {
     (async () => {
       try {
-        const { ideasId, products, customPrompt } = request;
-        const { analysisProvider, geminiKey, geminiModel, openaiKey, openaiModel, ideasGeminiModel, ideasOpenaiModel } =
+        const { ideasId, products, customPrompt, ideasCount = 5 } = request;
+        const { analysisProvider, geminiKey, geminiModel, openaiKey, openaiModel, ideasModel } =
           await new Promise(resolve => chrome.storage.sync.get(
-            ["analysisProvider", "geminiKey", "geminiModel", "openaiKey", "openaiModel", "ideasGeminiModel", "ideasOpenaiModel"], resolve
+            ["analysisProvider", "geminiKey", "geminiModel", "openaiKey", "openaiModel", "ideasModel"], resolve
           ));
         const provider = analysisProvider || "gemini";
 
@@ -874,7 +874,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }));
         const validImages = imageDataList.filter(p => p.base64);
 
-        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist specializing in cross-combining elements from multiple successful designs to produce fresh hybrid concepts. I will show you thumbnails of top-selling t-shirt products. For each design, identify its individual building blocks: typography style, illustration technique, color palette, theme, emotional angle, humor type, and target niche. Then generate 5 NEW ideas by deliberately mixing and matching these building blocks across different designs — for example: borrow the typography approach from one design, the illustration style from another, and the emotional angle from a third, then fuse them into a single cohesive concept that feels original and market-ready. Each idea must be a genuine remix — not a copy of any single design, but a new combination that could not be attributed to any one source. Do NOT use any elements that infringe on copyrights, trademarks, or intellectual property rights in the United States — including brand names, logos, characters, slogans, or any protected content.`;
+        const systemPrompt = customPrompt || `You are a creative t-shirt design strategist specializing in cross-combining elements from multiple successful designs to produce fresh hybrid concepts. I will show you thumbnails of top-selling t-shirt products. For each design, identify its individual building blocks: typography style, illustration technique, color palette, theme, emotional angle, humor type, and target niche. Then generate ${ideasCount} NEW ideas by deliberately mixing and matching these building blocks across different designs — for example: borrow the typography approach from one design, the illustration style from another, and the emotional angle from a third, then fuse them into a single cohesive concept that feels original and market-ready. Each idea must be a genuine remix — not a copy of any single design, but a new combination that could not be attributed to any one source. Do NOT use any elements that infringe on copyrights, trademarks, or intellectual property rights in the United States — including brand names, logos, characters, slogans, or any protected content.`;
 
         const outputSchema = `Return ONLY a JSON object (no markdown, no explanation):
 {
@@ -893,7 +893,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         let analysisText = '';
         if (provider === "openai") {
           if (!openaiKey) throw new Error("OpenAI API key not configured.");
-          const model = ideasOpenaiModel || openaiModel || "gpt-4.1";
+          const model = ideasModel || openaiModel || "gpt-4.1";
           const contentParts = [
             { type: "input_text", text: `${systemPrompt}\n\n${outputSchema}` },
             ...validImages.map(p => ({ type: "input_image", image_url: `data:${p.mimeType};base64,${p.base64}`, detail: "low" }))
@@ -908,7 +908,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           analysisText = JSON.parse(txt)?.output?.find(o => o.type === "message")?.content?.find(c => c.type === "output_text")?.text || '';
         } else {
           if (!geminiKey) throw new Error("Gemini API key not configured.");
-          const model = ideasGeminiModel || geminiModel || "gemini-2.5-flash";
+          const model = ideasModel || geminiModel || "gemini-2.5-flash";
           const parts = [
             { text: `${systemPrompt}\n\n${outputSchema}` },
             ...validImages.map(p => ({ inline_data: { mime_type: p.mimeType, data: p.base64 } }))

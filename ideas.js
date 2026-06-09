@@ -1,6 +1,27 @@
 let products = [];
 let excludedIndexes = new Set();
 let extractedPrompts = []; // { audience, styleName, prompt }
+let titleCleanupWords = []; // loaded from settings
+
+function loadTitleCleanup(cb) {
+    chrome.storage.sync.get('ideasTitleCleanup', r => {
+        titleCleanupWords = (r.ideasTitleCleanup || '')
+            .split(',')
+            .map(w => w.trim())
+            .filter(Boolean);
+        if (cb) cb();
+    });
+}
+
+function cleanTitle(title) {
+    if (!title || !titleCleanupWords.length) return title;
+    let result = title;
+    titleCleanupWords.forEach(word => {
+        const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        result = result.replace(re, '');
+    });
+    return result.replace(/\s{2,}/g, ' ').trim().replace(/^[-,|]+|[-,|]+$/g, '').trim();
+}
 
 const DEFAULT_SYSTEM_PROMPT = `You are a creative t-shirt design strategist specializing in cross-combining elements from multiple successful designs to produce fresh hybrid concepts. I will show you thumbnails of top-selling t-shirt products. For each design, identify its individual building blocks: typography style, illustration technique, color palette, theme, emotional angle, humor type, and target niche. Then generate 5 NEW ideas by deliberately mixing and matching these building blocks across different designs — for example: borrow the typography approach from one design, the illustration style from another, and the emotional angle from a third, then fuse them into a single cohesive concept that feels original and market-ready. Each idea must be a genuine remix — not a copy of any single design, but a new combination that could not be attributed to any one source. Do NOT use any elements that infringe on copyrights, trademarks, or intellectual property rights in the United States — including brand names, logos, characters, slogans, or any protected content.`;
 
@@ -32,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('customPrompt').value = DEFAULT_SYSTEM_PROMPT;
     });
 
+    loadTitleCleanup();
     document.getElementById('generateIdeasBtn').addEventListener('click', generateIdeas);
     setupImageSettingsPanel();
     setupGenerateImagesButton();
@@ -53,15 +75,20 @@ function renderThumbnails() {
         item.className = 'thumb-item';
         item.title = `${p.title}\nRank: #${p.rank.toLocaleString()}`;
         const asinUrl = `https://www.amazon.com/dp/${p.asin}`;
+        const hasRank = p.rank && p.rank > 0;
+        const hasAsin = p.asin && p.asin.length > 0;
+        const asinLabel = hasAsin ? p.asin : (p.title ? p.title.substring(0, 20) + (p.title.length > 20 ? '…' : '') : location.hostname);
         item.innerHTML = `
             <div class="thumb-item-img">
                 <img src="${p.thumbnail}" alt="" loading="lazy" onerror="this.closest('.thumb-item').style.display='none'">
-                <div class="rank-badge">#${p.rank.toLocaleString()}</div>
+                ${hasRank ? `<div class="rank-badge">#${p.rank.toLocaleString()}</div>` : ''}
                 <div class="exclude-overlay">🚫</div>
             </div>
             <div class="thumb-item-info">
                 <span class="thumb-item-num">${i + 1}.</span>
-                <a class="thumb-item-asin" href="${asinUrl}" target="_blank" title="${escHtml(p.title)}">${p.asin}</a>
+                ${hasAsin
+                    ? `<a class="thumb-item-asin" href="${asinUrl}" target="_blank" title="${escHtml(p.title)}">${p.asin}</a>`
+                    : `<span class="thumb-item-asin" title="${escHtml(p.title)}">${escHtml(asinLabel)}</span>`}
             </div>
         `;
         item.addEventListener('click', (e) => {
@@ -105,10 +132,11 @@ async function generateIdeas() {
     const params = new URLSearchParams(location.search);
     const ideasId = params.get('id');
     const customPrompt = document.getElementById('customPrompt').value.trim();
+    const ideasCount = parseInt(document.getElementById('ideasCountInput')?.value) || 5;
 
     try {
         const response = await new Promise(resolve =>
-            chrome.runtime.sendMessage({ action: 'generateIdeas', ideasId, products: activeProducts, customPrompt }, resolve)
+            chrome.runtime.sendMessage({ action: 'generateIdeas', ideasId, products: activeProducts, customPrompt, ideasCount }, resolve)
         );
         if (!response?.success) throw new Error(response?.message || 'Unknown error');
         renderIdeas(response.analysis);
@@ -163,11 +191,11 @@ function renderIdeas(text) {
                     ${idea.style ? `<span class="idea-tag tag-style">🎨 ${escHtml(idea.style)}</span>` : ''}
                 </div>
             </div>
+            ${idea.description ? `<div class="idea-row-desc"><div class="idea-row-desc-inner">${escHtml(idea.description)}</div></div>` : ''}
             ${idea.prompt ? `<div class="idea-row-prompt">
                 <div class="idea-prompt-text">${escHtml(idea.prompt)}</div>
                 <button class="copy-prompt-btn" data-prompt="${escAttr(idea.prompt)}" style="flex-shrink:0;">📋 Copy</button>
             </div>` : ''}
-            ${idea.description ? `<div class="idea-row-desc">${escHtml(idea.description)}</div>` : ''}
         </div>`;
     });
     html += '</div>';
@@ -187,7 +215,7 @@ function renderIdeas(text) {
     const promptItems = data.ideas
         .filter(idea => idea.prompt)
         .map(idea => ({
-            audience: idea.title || 'Idea',
+            audience: cleanTitle(idea.title || 'Idea'),
             styleName: idea.style || '',
             prompt: idea.prompt
         }));
@@ -483,8 +511,8 @@ function updateGalleryItem(element, data, error) {
                 <div class="gallery-item-info">
                     <div class="gallery-item-meta">
                         <span class="prompt-item-audience">${escHtml(data.audience || 'General')}</span>
-                        ${data.styleName ? `<span class="prompt-item-style">${escHtml(data.styleName)}</span>` : ''}
                     </div>
+                    ${data.styleName ? `<div class="gallery-item-meta" style="margin-top:3px;"><span class="prompt-item-style">${escHtml(data.styleName)}</span></div>` : ''}
                     <div class="gallery-item-prompt">${escHtml(data.prompt || '')}</div>
                     <div style="margin: 6px 0 2px;">
                         <input type="text" class="gallery-item-title${(data.audience || '').length > 60 ? ' title-too-long' : ''}" value="${escHtml(data.audience || '')}"
@@ -575,7 +603,7 @@ function setupDownloadButton() {
         const checkboxes = document.querySelectorAll('.gallery-checkbox');
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
         checkboxes.forEach(cb => { cb.checked = !allChecked; });
-        selectAllImagesBtn.textContent = allChecked ? '☑️ Chọn tất cả' : '☐ Bỏ chọn tất cả';
+        selectAllImagesBtn.textContent = allChecked ? '☑️ Select all' : '☐ Deselect all';
     });
 }
 
